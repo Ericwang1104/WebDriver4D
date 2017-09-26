@@ -1,0 +1,11 @@
+*.o
+*.ppu
+*.exe
+*.dbg
+*.or
+lib/ 
+DEBUG/
+RELEASE/
+__history/
+*.cookies
+__recovery/
