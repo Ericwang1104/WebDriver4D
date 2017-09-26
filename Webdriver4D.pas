@@ -855,8 +855,9 @@ end;
 
 function TWebDriver.ProcResponse(const Resp: string): string;
 var
-  JSon: TJsonObject;
+  JSon,Obj: TJsonObject;
   jType:TJsonDataType;
+
 begin
   JSon := TJsonObject.Create;
   try
@@ -875,7 +876,12 @@ begin
           end;
           jdtObject:
           begin
-            result :=json.O['value'].ToJSON();
+            Obj :=JSon.O['value'];
+            if Assigned(Obj) then
+              result :=Obj.ToJSON()
+            else
+              Result :='';
+
           end;
           jdtArray:
           begin
