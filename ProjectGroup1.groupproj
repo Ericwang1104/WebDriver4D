@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{EB8CA501-1F76-4A34-B72F-FFD28C2FCA85}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Test\WebDriver4DTests.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="WebDriverStart\StartPM.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="WebDriver4DTests">
+        <MSBuild Projects="Test\WebDriver4DTests.dproj"/>
+    </Target>
+    <Target Name="WebDriver4DTests:Clean">
+        <MSBuild Projects="Test\WebDriver4DTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="WebDriver4DTests:Make">
+        <MSBuild Projects="Test\WebDriver4DTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="StartPM">
+        <MSBuild Projects="WebDriverStart\StartPM.dproj"/>
+    </Target>
+    <Target Name="StartPM:Clean">
+        <MSBuild Projects="WebDriverStart\StartPM.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="StartPM:Make">
+        <MSBuild Projects="WebDriverStart\StartPM.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="WebDriver4DTests;StartPM"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="WebDriver4DTests:Clean;StartPM:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="WebDriver4DTests:Make;StartPM:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
