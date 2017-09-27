@@ -487,7 +487,7 @@ begin
   Element := FWD.FindElementByID('loginAction');
   FWD.ElementClick(Element);
   Sleep(3000);
-  FWD.Save_screenshot('e:\temp\weibo.png');
+  FWD.Save_screenshot('..\..\weibo.png');
 
 end;
 

@@ -131,7 +131,7 @@ function JsonSimpleParser(const KeyName, Data: string): string;
 implementation
 
 uses
-  System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils;
+  System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils, Winapi.TlHelp32;
 
 function MatchString(const PS: Pchar; const KeyWord: string): Boolean;
 var
