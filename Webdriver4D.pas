@@ -105,6 +105,7 @@ type
     procedure Quit;
     procedure Refresh(ParamSessionID: string = '');
     procedure SendKey(const Element, Key: string);
+    procedure SwitchToFrame(const FrameID: string);
     procedure TerminatePhantomjs;
     property CookieFiles: string read FCookieFiles write FCookieFiles;
     property DiskCache: Boolean read FDiskCache write FDiskCache;
@@ -937,6 +938,22 @@ end;
 procedure TWebDriver.SetTimeOut(const Value: Integer);
 begin
   FCmd.Timeout := Value;
+end;
+
+procedure TWebDriver.SwitchToFrame(const FrameID: string);
+var
+  command: string;
+  Data: string;
+  Resp: string;
+begin
+  command := Host + '/session/' + FSessionID + '/frame';
+  FJson.Clear;
+  FJson.S['id'] :=FrameID;
+  FJson.S['sessionid'] :=FSessionID;
+  Data := FJson.ToJSON();
+  Resp := FCmd.ExecutePost(command, Data);
+  ProcResponse(Resp);
+
 end;
 
 constructor TDriverCommand.Create(AOwner: TComponent);
