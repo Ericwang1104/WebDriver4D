@@ -3,14 +3,15 @@ unit delphi_driver;
 interface
 
 uses
-  Classes,Sysutils, System.Net.HttpClient, Webdriver4D;
+  Classes, Sysutils, System.Net.HttpClient, System.Net.URLClient,
+  System.NetConsts, Webdriver4D;
 
 type
   TDelphiCommand = class(TDriverCommand)
   private
     Fhttp: THTTPClient;
-    procedure InitHeader; override;
   protected
+    procedure InitHeader; override;
     function GetTimeout: Integer; override;
     procedure SetTimeout(const Value: Integer); override;
   public
@@ -23,24 +24,22 @@ type
 
 implementation
 
-
-
 constructor TDelphiCommand.Create(AOwner: TComponent);
 begin
   inherited;
-  Fhttp :=THTTPClient.Create;
+  Fhttp := THTTPClient.Create;
 end;
 
 destructor TDelphiCommand.Destroy;
 begin
-  FreeAndNil(FHttp);
+  FreeAndNil(Fhttp);
   inherited;
 end;
 
 procedure TDelphiCommand.ExecuteDelete(command: string);
 begin
   try
-    FHttp.Delete(command);
+    Fhttp.Delete(command);
   except
     //
 
@@ -49,11 +48,11 @@ end;
 
 function TDelphiCommand.ExecuteGet(URL: string): string;
 begin
- result := '';
+  result := '';
   try
     InitHeader;
     FSTM.Clear;
-    FHttp.Get(URL, FSTM);
+    Fhttp.Get(URL, FSTM);
     result := FSTM.DataString;
   except
     //
@@ -63,17 +62,17 @@ end;
 
 function TDelphiCommand.ExecutePost(const URL, Data: string): string;
 var
-  PostStream:TStringStream;
+  PostStream: TStringStream;
 begin
   result := '';
-  PostStream :=TStringStream.Create('', TEncoding.UTF8);
+  PostStream := TStringStream.Create('', TEncoding.UTF8);
   try
     try
       PostStream.WriteString(Data);
-      PostStream.Position :=0;
+      PostStream.Position := 0;
       InitHeader;
       FSTM.Clear;
-      FHttp.Post(URL,PostStream,FSTM);
+      Fhttp.Post(URL, PostStream, FSTM);
       result := FSTM.DataString;
     finally
       FreeAndNil(PostStream);
@@ -85,19 +84,19 @@ end;
 
 function TDelphiCommand.GetTimeout: Integer;
 begin
-  Result := Fhttp.ResponseTimeout;
+  result := Fhttp.ResponseTimeout;
 end;
 
 procedure TDelphiCommand.InitHeader;
 begin
-  Fhttp.UserAgent :='Delphi http Client';
-  Fhttp.ContentType :='application/json';
-  Fhttp.Accept :='*/*';
+  Fhttp.UserAgent := 'Delphi http Client';
+  Fhttp.ContentType := 'application/json';
+  Fhttp.Accept := '*/*';
 end;
 
 procedure TDelphiCommand.SetTimeout(const Value: Integer);
 begin
-  Fhttp.ResponseTimeout :=Value;
+  Fhttp.ResponseTimeout := Value;
 end;
 
 end.

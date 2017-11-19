@@ -3,39 +3,25 @@ unit Webdriver4D;
 interface
 
 uses
-  Classes, SysUtils, Windows,  Vcl.Graphics,
+  Classes, SysUtils, Windows, Vcl.Graphics,
   JsonDataObjects, Winapi.ShlObj;
 
 type
-  TPCharStack=record
-  private
-    StackArr :array of Pchar;
-    FPos:integer;
-    function GetCount: Integer;
-  public
-
-    constructor Create(StackCount: Integer);
-    procedure Push(chr:PChar);
-    function Pop: PChar;
-    property Count: Integer read GetCount;
-
-  end;
   TDriverCommand = class(TComponent)
   private
-    FTimeout: Integer;
-  strict protected
-    procedure InitHeader; virtual; abstract;
+    FTimeout: integer;
   protected
     FSTM: TStringStream;
-    function GetTimeout: Integer; virtual; abstract;
-    procedure SetTimeout(const Value: Integer); virtual; abstract;
+    procedure InitHeader; virtual; abstract;
+    function GetTimeout: integer; virtual; abstract;
+    procedure SetTimeout(const Value: integer); virtual; abstract;
   public
-    constructor Create(AOwner: TComponent); virtual;
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure ExecuteDelete(command: string); virtual; abstract;
     function ExecuteGet(URL: string): string; virtual; abstract;
     function ExecutePost(const URL, Data: string): string; virtual; abstract;
-    property Timeout: Integer read GetTimeout write SetTimeout;
+    property Timeout: integer read GetTimeout write SetTimeout;
   end;
 
 type
@@ -44,10 +30,11 @@ type
   TWebDriver = class(TComponent)
   strict private
     Fcapabilities: string;
-    FPort: Integer;
+    FPort: integer;
     FSessionID: string;
     function BuildParams: string;
-    procedure CutImage(const FileName: string; Pic: string; X, Y, Width, Height: Integer);
+    procedure CutImage(const FileName: string; Pic: string;
+      X, Y, Width, Height: integer);
     function ProcResponse(const Resp: string): string;
   private
     FAddress: string;
@@ -64,10 +51,10 @@ type
     FProcessInfo: TProcessInformation;
     FStartupInfo: TStartupInfo;
     function GetHost: string;
-    function GetTimeOut: Integer;
+    function GetTimeout: integer;
     procedure SaveScreenToFileName(const FileName, Base64File: string);
     procedure SetBrowserType(const Value: TDriverType);
-    procedure SetTimeOut(const Value: Integer);
+    procedure SetTimeout(const Value: integer);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -86,13 +73,15 @@ type
     procedure GetURL(const URL: string);
     function NewSession(BrowserFileName: string = ''): string;
     procedure Save_screenshot(const FileName: string);
-    procedure Set_Window_Size(const Width, Height: Integer; WindowHandle: string = 'current');
+    procedure Set_Window_Size(const Width, Height: integer;
+      WindowHandle: string = 'current');
     procedure DeleteSession(ParamSessionID: string = '');
     procedure ElementClick(const Element: string);
     function Element_Location(const Element: string): string;
     procedure Element_ScreenShort(const Element, FileName: string);
     function Element_Size(const Element: string): string;
-    function ExecuteScript(const Script: string; const Args: string = '[]'): string;
+    function ExecuteScript(const Script: string;
+      const Args: string = '[]'): string;
     function FindElementsByXPath(XPath: string): string;
     function FindElementsByTag(const TagName: string): string;
     function FindElementsByLinkText(const LinkText: string): string;
@@ -101,7 +90,7 @@ type
     function GetAllSession: string;
     function Get_AllCookies: string;
     procedure Implicitly_Wait(const waitTime: Double);
-    procedure PageLoadTimeout(const Timeout: Integer);
+    procedure PageLoadTimeout(const Timeout: integer);
     procedure Quit;
     procedure Refresh(ParamSessionID: string = '');
     procedure SendKey(const Element, Key: string);
@@ -117,92 +106,22 @@ type
     property Address: string read FAddress write FAddress;
     property BrowserType: TDriverType read FBrowserType write SetBrowserType;
     property Cmd: TDriverCommand read FCmd write FCmd;
-    property Port: Integer read FPort write FPort;
+    property Port: integer read FPort write FPort;
     property Path: string read FPath write FPath;
     property SessionID: string read FSessionID write FSessionID;
   published
     procedure Clear;
-    property Timeout: Integer read GetTimeOut write SetTimeOut;
+    property Timeout: integer read GetTimeout write SetTimeout;
   end;
-
-function MatchString(const PS: Pchar; const KeyWord: string): Boolean;
-
-function JsonSimpleParser(const KeyName, Data: string): string;
 
 implementation
 
 uses
   System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils, Winapi.TlHelp32;
 
-function MatchString(const PS: Pchar; const KeyWord: string): Boolean;
-var
-  strBuf: string;
-  Len: integer;
-begin
-  Len := Length(KeyWord);
-  SetString(strBuf, PS, Len);
-  result := SameText(strBuf, KeyWord);
-
-end;
-
-function JsonSimpleParser(const KeyName, Data: string): string;
-var
-  I: Integer;
-  PS, PE: Pchar;
-  PElementS, PElementE: Pchar;
-  KeyWord: string;
-  FindKey: Boolean;
-  Stack:TPCharStack;
-begin
-  PS := @Data[Low(Data)];
-  PE := @Data[High(Data)];
-  KeyWord := '"' + KeyName + '"';
-  FindKey := false;
-  Stack :=TPcharStack.Create(256);
-  while PS < PE do
-  begin
-    if not FindKey then
-    begin
-      if MatchString(PS, KeyWord) then
-      begin
-
-      end;
-      Inc(PS);
-    end
-    else
-    begin
-      if PS^ = ':' then
-      begin
-        PElementS :=PS+1;
-      end
-      else if PS^ = '{' then
-      begin
-        // push stack
-        Stack.Push(PS);
-      end
-      else if PS^ = '}' then
-      begin
-        //pop stack
-        if Stack.Count=0 then
-        begin
-          PElementE :=PS;
-          SetString(result,PElementS,PElementE-PElementS+1);
-          Exit;
-        end;
-
-
-      end;
-    end;
-    Inc(PS);
-
-  end;
-
-end;
-
 constructor TWebDriver.Create(AOwner: TComponent);
 begin
   inherited;
-
   FJson := TJsonObject.Create;
   FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
   FAddress := '127.0.0.1';
@@ -281,7 +200,8 @@ begin
   FCmd.ExecuteDelete(command);
 end;
 
-procedure TWebDriver.CutImage(const FileName: string; Pic: string; X, Y, Width, Height: Integer);
+procedure TWebDriver.CutImage(const FileName: string; Pic: string;
+  X, Y, Width, Height: integer);
 var
   png: TPngImage;
   Encd: TBase64Encoding;
@@ -368,7 +288,7 @@ begin
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/location';
   Resp := FCmd.ExecuteGet(command);
-  FJson.FromJSON(Resp);
+ // FJson.FromJSON(Resp);
   result := ProcResponse(Resp);
 end;
 
@@ -383,11 +303,12 @@ begin
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
   Resp := FCmd.ExecuteGet(command);
-  FJson.FromJSON(Resp);
+ // FJson.FromJSON(Resp);
   result := ProcResponse(Resp);
 end;
 
-function TWebDriver.ExecuteScript(const Script: string; const Args: string = '[]'): string;
+function TWebDriver.ExecuteScript(const Script: string;
+  const Args: string = '[]'): string;
 var
   command: string;
   Data: string;
@@ -395,8 +316,8 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/execute';
   FJson.Clear;
-  FJson.S['script'] :=Script;
-  FJson.S['sessionid'] :=FSessionID;
+  FJson.S['script'] := Script;
+  FJson.S['sessionid'] := FSessionID;
   FJson.A['args'].FromJSON(Args);
 
   Data := FJson.ToJSON();
@@ -427,10 +348,9 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/element';
   FJson.Clear;
-
-  FJson.S['value'] :=KeyName;
+  FJson.S['value'] := KeyName;
   FJson.S['sessionid'] := FSessionID;
-  FJson.S['using'] :=usingName;
+  FJson.S['using'] := usingName;
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   result := ProcResponse(Resp);
@@ -473,15 +393,17 @@ begin
   result := ProcResponse(Resp);
 end;
 
-function TWebDriver.GetElementAttribute(const Element, attributename: string): string;
+function TWebDriver.GetElementAttribute(const Element, attributename
+  : string): string;
 var
   command: string;
   Ele: string;
   Resp: string;
 begin
-  FJson.FromJSON(PChar(Element));
+  FJson.FromJSON(Pchar(Element));
   Ele := FJson.S['ELEMENT'];
-  command := Host + '/session/' + FSessionID + '/element/' + Ele + '/attribute/' + attributename;
+  command := Host + '/session/' + FSessionID + '/element/' + Ele + '/attribute/'
+    + attributename;
   Resp := FCmd.ExecuteGet(command);
   result := ProcResponse(Resp);
 end;
@@ -496,7 +418,7 @@ var
   command: string;
   Data: string;
   Resp: string;
-  i: Integer;
+  I: integer;
 begin
   command := Host + '/session/' + FSessionID + '/url';
   FJson.Clear;
@@ -507,11 +429,11 @@ begin
   ProcResponse(Resp);
   if not FHasError then
   begin
-    i := 0;
-    while i < Timeout do
+    I := 0;
+    while I < Timeout do
     begin
       sleep(500);
-      inc(i, 1000);
+      Inc(I, 1000);
       if ExecuteScript('return document.readyState') = 'complete' then
         break;
     end;
@@ -525,7 +447,7 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/cookie';
   Resp := FCmd.ExecuteGet(command);
-  FJson.FromJSON(Resp);
+ // FJson.FromJSON(Resp);
   result := ProcResponse(Resp);
 end;
 
@@ -537,8 +459,8 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/timeouts/implicit_wait';
   FJson.Clear;
-  FJson.F['ms'] :=waitTime;
-  FJson.S['session'] :=FSessionID;
+  FJson.F['ms'] := waitTime;
+  FJson.S['session'] := FSessionID;
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
@@ -546,9 +468,19 @@ end;
 
 function TWebDriver.NewSession(BrowserFileName: string = ''): string;
 const
-  Phantomjs_PARAM = '{"desiredCapabilities": {"takesScreenshot":false,"browserName":"phantomjs",' + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"' + ' , "platform": "windows", "version": "", "javascriptEnabled": true},' + '"capabilities": {"takesScreenshot":false,"browserName": "phantomjs", "firstMatch": [],' + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"' + ',"platform": "windows", "alwaysMatch": {}, "javascriptEnabled": true, "version": ""}}';
-  IE_Param = '{"capabilities": {"firstMatch": [], "alwaysMatch": {"browserName": "internet explorer", "version": "", "platform": "WINDOWS"}}, "desiredCapabilities": {"browserName": "internet explorer", "version": "", "platform": "WINDOWS"}}';
-  Firefox_Param = '{"capabilities": {"firstMatch": [], "alwaysMatch": {"browserName": "firefox", ' + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' + '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
+  Phantomjs_PARAM =
+    '{"desiredCapabilities": {"takesScreenshot":false,"browserName":"phantomjs",'
+    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
+    + ' , "platform": "windows", "version": "", "javascriptEnabled": true},' +
+    '"capabilities": {"takesScreenshot":false,"browserName": "phantomjs", "firstMatch": [],'
+    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
+    + ',"platform": "windows", "alwaysMatch": {}, "javascriptEnabled": true, "version": ""}}';
+  IE_Param =
+    '{"capabilities": {"firstMatch": [], "alwaysMatch": {"browserName": "internet explorer", "version": "", "platform": "WINDOWS"}}, "desiredCapabilities": {"browserName": "internet explorer", "version": "", "platform": "WINDOWS"}}';
+  Firefox_Param =
+    '{"capabilities": {"firstMatch": [], "alwaysMatch": {"browserName": "firefox", '
+    + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' +
+    '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
 var
   command: string;
   status: string;
@@ -611,11 +543,11 @@ begin
   else
     command := Host + '/session/' + FSessionID + '/refresh';
   FJson.Clear;
-  FJson.S['sessionid'] :=FSessionID;
+  FJson.S['sessionid'] := FSessionID;
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
-  FJson.FromJSON(Resp);
+ // FJson.FromJSON(Resp);
 end;
 
 procedure TWebDriver.SaveScreenToFileName(const FileName, Base64File: string);
@@ -643,14 +575,15 @@ var
   command: string;
 begin
   if FProcessInfo.hProcess <> 0 then
-    exit;
+    Exit;
   FillChar(FStartupInfo, SizeOf(FStartupInfo), 0);
   FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
   FStartupInfo.dwFlags := STARTF_USESHOWWINDOW;
   FStartupInfo.wShowWindow := SW_HIDE;
   command := self.BuildParams;
 
-  if CreateProcess(PChar(ExeName), PChar(command), nil, nil, false, NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
+  if CreateProcess(Pchar(ExeName), Pchar(command), nil, nil, false,
+    NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
   begin
 
   end;
@@ -678,10 +611,9 @@ var
   Pic: string;
   Size: string;
   Loc: string;
-  X, Y, Width, Height: Integer;
+  X, Y, Width, Height: integer;
   Ele: string;
 begin
-
   FJson.Clear;
   FJson.FromJSON(Element);
   Ele := FJson.S['ELEMENT'];
@@ -703,7 +635,6 @@ begin
     Width := FJson.I['width'];
     Height := FJson.I['height'];
     CutImage(FileName, Pic, X, Y, Width, Height);
-
   end;
 end;
 
@@ -740,7 +671,7 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/elements';
   FJson.Clear;
-  FJson.S['value'] :=KeyName;
+  FJson.S['value'] := KeyName;
   FJson.S['sessionid'] := FSessionID;
   FJson.S['using'] := usingName;
   Data := FJson.ToJSON(false);
@@ -755,41 +686,42 @@ var
   Data: string;
   Resp: string;
   KeyArr: string;
-  i: Integer;
+  I: integer;
 begin
   FJson.FromJSON(Element);
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/value';
 
   FJson.Clear;
-
   KeyArr := '[';
-  for i := 1 to Length(Key) do
+  for I := 1 to Length(Key) do
   begin
     if KeyArr = '[' then
-      KeyArr := KeyArr + '"' + Key[i] + '"'
+      KeyArr := KeyArr + '"' + Key[I] + '"'
     else
-      KeyArr := KeyArr + ',' + '"' + Key[i] + '"';
+      KeyArr := KeyArr + ',' + '"' + Key[I] + '"';
   end;
 
   KeyArr := KeyArr + ']';
 
-  FJson.A['value'].FromJSON( KeyArr);
-  FJson.S['text'] :=Key;
-  FJson.S['sessionid'] :=FSessionID;
-  FJson.S['id'] :=Ele;
+  FJson.A['value'].FromJSON(KeyArr);
+  FJson.S['text'] := Key;
+  FJson.S['sessionid'] := FSessionID;
+  FJson.S['id'] := Ele;
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
 end;
 
-procedure TWebDriver.Set_Window_Size(const Width, Height: Integer; WindowHandle: string = 'current');
+procedure TWebDriver.Set_Window_Size(const Width, Height: integer;
+  WindowHandle: string = 'current');
 var
   command: string;
   Data: string;
   Resp: string;
 begin
-  command := Host + '/session/' + FSessionID + '/window/' + WindowHandle + '/size';
+  command := Host + '/session/' + FSessionID + '/window/' + WindowHandle
+    + '/size';
   FJson.Clear;
   FJson.I['width'] := Width;
   FJson.I['height'] := Height;
@@ -812,7 +744,7 @@ var
   AllSession: string;
   Json: TJsonArray;
   Session: string;
-  i: Integer;
+  I: integer;
 begin
   AllSession := GetAllSession;
   Json := TJsonArray.Create;
@@ -820,7 +752,7 @@ begin
     if AllSession <> '' then
     begin
       Json.FromJSON(AllSession);
-      for i := 0 to Json.Count - 1 do
+      for I := 0 to Json.Count - 1 do
       begin
         Session := Json.O[I].S['id'];
         CloseWindow(Session);
@@ -832,13 +764,13 @@ begin
   end;
 end;
 
-function TWebDriver.GetTimeOut: Integer;
+function TWebDriver.GetTimeout: integer;
 begin
 
   result := FCmd.Timeout;
 end;
 
-procedure TWebDriver.PageLoadTimeout(const Timeout: Integer);
+procedure TWebDriver.PageLoadTimeout(const Timeout: integer);
 var
   command: string;
   Data: string;
@@ -846,7 +778,7 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/timeouts';
   FJson.Clear;
-  FJson.S['type'] :='page load';
+  FJson.S['type'] := 'page load';
   FJson.S['sessionid'] := FSessionID;
   FJson.I['ms'] := Timeout;
   Data := FJson.ToJSON(false);
@@ -856,40 +788,40 @@ end;
 
 function TWebDriver.ProcResponse(const Resp: string): string;
 var
-  JSon,Obj: TJsonObject;
-  jType:TJsonDataType;
+  Json, Obj: TJsonObject;
+  jType: TJsonDataType;
 
 begin
-  JSon := TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     if Resp <> '' then
     begin
-      JSon.FromJSON(Resp);
-      if JSon.S['status']  = '0' then
+      Json.FromJSON(Resp);
+      if Json.S['status'] = '0' then
       begin
         // success
         FHasError := false;
-        jType :=json.Types['value'];
+        jType := Json.Types['value'];
         case jType of
           jdtString, jdtInt, jdtLong, jdtULong, jdtFloat, jdtDateTime, jdtBool:
-          begin
-            Result :=JSon.S['value'];
-          end;
+            begin
+              result := Json.S['value'];
+            end;
           jdtObject:
-          begin
-            Obj :=JSon.O['value'];
-            if Assigned(Obj) then
-              result :=Obj.ToJSON()
-            else
-              Result :='';
+            begin
+              Obj := Json.O['value'];
+              if Assigned(Obj) then
+                result := Obj.ToJSON()
+              else
+                result := '';
 
-          end;
+            end;
           jdtArray:
-          begin
-            result :=JSon.A['value'].ToJSON();
-          end;
+            begin
+              result := Json.A['value'].ToJSON();
+            end;
         else
-          result :=json.S['value'];
+          result := Json.S['value'];
         end;
 
       end
@@ -908,7 +840,7 @@ begin
       result := '';
     end;
   finally
-    FreeAndNil(JSon);
+    FreeAndNil(Json);
   end;
 end;
 
@@ -935,7 +867,7 @@ begin
 
 end;
 
-procedure TWebDriver.SetTimeOut(const Value: Integer);
+procedure TWebDriver.SetTimeout(const Value: integer);
 begin
   FCmd.Timeout := Value;
 end;
@@ -948,8 +880,8 @@ var
 begin
   command := Host + '/session/' + FSessionID + '/frame';
   FJson.Clear;
-  FJson.S['id'] :=FrameID;
-  FJson.S['sessionid'] :=FSessionID;
+  FJson.S['id'] := FrameID;
+  FJson.S['sessionid'] := FSessionID;
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
@@ -960,7 +892,7 @@ constructor TDriverCommand.Create(AOwner: TComponent);
 begin
   inherited;
   FSTM := TStringStream.Create('', TEncoding.UTF8);
-  FTimeout :=6000;
+  FTimeout := 6000;
 end;
 
 destructor TDriverCommand.Destroy;
@@ -969,41 +901,4 @@ begin
   inherited;
 end;
 
-constructor TPCharStack.Create(StackCount: Integer );
-begin
-  inherited;
-  SetLength(StackArr,Stackcount);
-  FPos :=0;
-end;
-
-function TPCharStack.GetCount: Integer;
-begin
-  Result :=FPos ;
-end;
-
-function TPCharStack.Pop: PChar;
-begin
-  if FPos=0 then
-  begin
-    result :=nil;
-  end else
-  begin
-    result :=StackArr[FPos];
-    StackArr[FPos] :=nil;
-    Dec(FPos);
-  end;
-end;
-
-procedure TPCharStack.Push(chr:PChar);
-begin
-  if FPos>High(FPos) then
-  begin
-    SetLength(StackArr,Round(High(StackArr)*0.2));
-  end;
-  StackArr[FPos+1] :=chr;
-  Inc(FPos);
-
-end;
-
 end.
-
