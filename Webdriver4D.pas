@@ -45,6 +45,7 @@ type
     procedure Assign(Source: TPersistent); override;
     procedure CloseWindow(ParamSessionID: string = '');
     function GetAllCookie: string;
+    function GetAllCookieJsonArray: string;
     function AddCookie(cookieName, cookieValue: string): string;
     procedure DeleteAllCookie;
     procedure DeleteCookie(const cookieName: string);
@@ -763,37 +764,26 @@ end;
 
 function TWebDriver.GetAllCookie: string;
 var
-  command: string;
-  Resp: string;
   S: string;
   I: integer;
   aryJson: TJsonArray;
   tmpJson: TJsonObject;
 begin
   result := '';
-  command := Host + '/session/' + FSessionID + '/cookie';
-  Resp := FCmd.ExecuteGet(command);
-  if Resp <> '' then
+  S := GetAllCookieJsonArray;
+  aryJson := TJsonBaseObject.Parse(S) as TJsonArray;
+  if aryJson <> nil then
   begin
-    S := ProcResponse(Resp);
-    aryJson := TJsonBaseObject.Parse(S) as TJsonArray;
-    if aryJson <> nil then
+    // 数组JSON
+    for I := 0 to aryJson.Count - 1 do
     begin
-      // 数组JSON
-      for I := 0 to aryJson.Count - 1 do
-      begin
-        tmpJson := aryJson.O[I];
-        if result = '' then
-          result := tmpJson.S['name'] + '=' + tmpJson.S['value']
-        else
-          result := result + '; ' + tmpJson.S['name'] + '=' +
-            tmpJson.S['value'];
-      end;
+      tmpJson := aryJson.O[I];
+      if result = '' then
+        result := tmpJson.S['name'] + '=' + tmpJson.S['value']
+      else
+        result := result + '; ' + tmpJson.S['name'] + '=' + tmpJson.S['value'];
     end;
-  end
-  else
-  begin
-    result := '';
+    aryJson.Free;
   end;
 end;
 
@@ -833,6 +823,19 @@ begin
   Data := FJson.ToJSON(True);
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
+end;
+
+function TWebDriver.GetAllCookieJsonArray: string;
+var
+  command: string;
+  Resp: string;
+begin
+  command := Host + '/session/' + FSessionID + '/cookie';
+  Resp := FCmd.ExecuteGet(command);
+  if Resp <> '' then
+    result := ProcResponse(Resp)
+  else
+    result := '[]';
 end;
 
 function TWebDriver.ProcResponse(const Resp: string): string;
