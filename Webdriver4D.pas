@@ -3,26 +3,9 @@ unit Webdriver4D;
 interface
 
 uses
-  Classes, SysUtils, Windows, Vcl.Graphics,
+  Classes, SysUtils, Windows, Vcl.Graphics, WD_http,
+{$IFDEF FPC} {$ELSE} WD_httpDelphi, {$ENDIF}
   JsonDataObjects, Winapi.ShlObj;
-
-type
-  TDriverCommand = class(TComponent)
-  private
-    FTimeout: integer;
-  protected
-    FSTM: TStringStream;
-    procedure InitHeader; virtual; abstract;
-    function GetTimeout: integer; virtual; abstract;
-    procedure SetTimeout(const Value: integer); virtual; abstract;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure ExecuteDelete(command: string); virtual; abstract;
-    function ExecuteGet(URL: string): string; virtual; abstract;
-    function ExecutePost(const URL, Data: string): string; virtual; abstract;
-    property Timeout: integer read GetTimeout write SetTimeout;
-  end;
 
 type
   TDriverType = (btPhantomjs, btIE, btFirefox, btChrome);
@@ -61,6 +44,10 @@ type
     procedure StartPm(const ExeName: string);
     procedure Assign(Source: TPersistent); override;
     procedure CloseWindow(ParamSessionID: string = '');
+    function GetAllCookie: string;
+    function AddCookie(cookieName, cookieValue: string): string;
+    procedure DeleteAllCookie;
+    procedure DeleteCookie(const cookieName: string);
     function FindElementByID(const ID: string): string;
     function FindElementByTag(const TagName: string): string;
     function FindElementByClassName(const ClasName: string): string;
@@ -88,7 +75,7 @@ type
     function FindElementsByID(const ID: string): string;
     function FindElementsByClassName(const ClasName: string): string;
     function GetAllSession: string;
-    function Get_AllCookies: string;
+
     procedure Implicitly_Wait(const waitTime: Double);
     procedure PageLoadTimeout(const Timeout: integer);
     procedure Quit;
@@ -133,11 +120,16 @@ begin
   FLogFile := '';
   FHasError := false;
   FErrorMessage := '';
+{$IFDEF FPC}
+{$ELSE}
+  FCmd := TDelphiCommand.Create(self);
+{$ENDIF}
 end;
 
 destructor TWebDriver.Destroy;
 begin
   FreeAndNil(FJson);
+  FreeAndNil(FCmd);
   if FProcessInfo.hProcess <> 0 then
     TerminatePhantomjs;
   inherited;
@@ -288,7 +280,7 @@ begin
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/location';
   Resp := FCmd.ExecuteGet(command);
- // FJson.FromJSON(Resp);
+  // FJson.FromJSON(Resp);
   result := ProcResponse(Resp);
 end;
 
@@ -303,7 +295,7 @@ begin
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
   Resp := FCmd.ExecuteGet(command);
- // FJson.FromJSON(Resp);
+  // FJson.FromJSON(Resp);
   result := ProcResponse(Resp);
 end;
 
@@ -440,17 +432,6 @@ begin
   end;
 end;
 
-function TWebDriver.Get_AllCookies: string;
-var
-  command: string;
-  Resp: string;
-begin
-  command := Host + '/session/' + FSessionID + '/cookie';
-  Resp := FCmd.ExecuteGet(command);
- // FJson.FromJSON(Resp);
-  result := ProcResponse(Resp);
-end;
-
 procedure TWebDriver.Implicitly_Wait(const waitTime: Double);
 var
   command: string;
@@ -547,7 +528,7 @@ begin
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
- // FJson.FromJSON(Resp);
+  // FJson.FromJSON(Resp);
 end;
 
 procedure TWebDriver.SaveScreenToFileName(const FileName, Base64File: string);
@@ -764,9 +745,60 @@ begin
   end;
 end;
 
+procedure TWebDriver.DeleteAllCookie;
+var
+  command: string;
+begin
+  command := Host + '/session/' + FSessionID + '/cookie';
+  FCmd.ExecuteDelete(command);
+end;
+
+procedure TWebDriver.DeleteCookie(const cookieName: string);
+var
+  command: string;
+begin
+  command := Host + '/session/' + FSessionID + '/cookie' + '/' + cookieName;
+  FCmd.ExecuteDelete(command);
+end;
+
+function TWebDriver.GetAllCookie: string;
+var
+  command: string;
+  Resp: string;
+  S: string;
+  I: integer;
+  aryJson: TJsonArray;
+  tmpJson: TJsonObject;
+begin
+  result := '';
+  command := Host + '/session/' + FSessionID + '/cookie';
+  Resp := FCmd.ExecuteGet(command);
+  if Resp <> '' then
+  begin
+    S := ProcResponse(Resp);
+    aryJson := TJsonBaseObject.Parse(S) as TJsonArray;
+    if aryJson <> nil then
+    begin
+      // Êý×éJSON
+      for I := 0 to aryJson.Count - 1 do
+      begin
+        tmpJson := aryJson.O[I];
+        if result = '' then
+          result := tmpJson.S['name'] + '=' + tmpJson.S['value']
+        else
+          result := result + '; ' + tmpJson.S['name'] + '=' +
+            tmpJson.S['value'];
+      end;
+    end;
+  end
+  else
+  begin
+    result := '';
+  end;
+end;
+
 function TWebDriver.GetTimeout: integer;
 begin
-
   result := FCmd.Timeout;
 end;
 
@@ -786,11 +818,27 @@ begin
   ProcResponse(Resp);
 end;
 
+function TWebDriver.AddCookie(cookieName, cookieValue: string): string;
+var
+  command: string;
+  Data: string;
+  Resp: string;
+  ckJson: TJsonObject;
+begin
+  FJson.Clear;
+  ckJson := FJson.O['cookie'];
+  ckJson.S['name'] := cookieName;
+  ckJson.S['value'] := cookieValue;
+  command := Host + '/session/' + FSessionID + '/cookie';
+  Data := FJson.ToJSON(True);
+  Resp := FCmd.ExecutePost(command, Data);
+  ProcResponse(Resp);
+end;
+
 function TWebDriver.ProcResponse(const Resp: string): string;
 var
   Json, Obj: TJsonObject;
   jType: TJsonDataType;
-
 begin
   Json := TJsonObject.Create;
   try
@@ -814,7 +862,6 @@ begin
                 result := Obj.ToJSON()
               else
                 result := '';
-
             end;
           jdtArray:
             begin
@@ -823,7 +870,6 @@ begin
         else
           result := Json.S['value'];
         end;
-
       end
       else
       begin
@@ -885,20 +931,6 @@ begin
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
-
-end;
-
-constructor TDriverCommand.Create(AOwner: TComponent);
-begin
-  inherited;
-  FSTM := TStringStream.Create('', TEncoding.UTF8);
-  FTimeout := 6000;
-end;
-
-destructor TDriverCommand.Destroy;
-begin
-  FreeAndNil(FSTM);
-  inherited;
 end;
 
 end.

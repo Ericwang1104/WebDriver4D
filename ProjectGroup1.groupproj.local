@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
-  <Transactions/>
-  <Default.Personality>
-    <Projects ActiveProject="E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj"/>
-  </Default.Personality>
+	<Transactions/>
+	<Default.Personality>
+		<Projects ActiveProject="E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj"/>
+	</Default.Personality>
 </BorlandProject>
