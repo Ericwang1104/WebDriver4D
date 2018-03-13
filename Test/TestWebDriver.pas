@@ -13,7 +13,7 @@ interface
 
 uses
   TestFramework, System.Classes, System.SysUtils, JsonDataObjects, WebDriver4D,
-  delphi_driver;
+  WD_http,wd_httpDelphi;
 
 type
   // Test methods for class TPhantomjs
@@ -235,7 +235,7 @@ begin
 
   end;
 
-  Cookies := FWD.Get_AllCookies;
+  Cookies := FWD.GetAllCookie;
   try
     lst := TStringList.Create;
     lst.Text := Cookies;
@@ -730,7 +730,7 @@ procedure TestTPhantomjs.TestGet_AllCookies;
 var
   ReturnValue: string;
 begin
-  ReturnValue := FWD.Get_AllCookies;
+  ReturnValue := FWD.GetAllCookie;
   // TODO: Validate method results
 end;
 

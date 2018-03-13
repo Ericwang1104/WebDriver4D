@@ -102,9 +102,9 @@
         </DelphiCompile>
         <DCCReference Include="TestWebDriver.pas"/>
         <DCCReference Include="..\Webdriver4D.pas"/>
-        <DCCReference Include="..\delphi_driver.pas"/>
-        <DCCReference Include="..\lazarus_driver.pas"/>
         <DCCReference Include="..\JsonDataObjects.pas"/>
+        <DCCReference Include="..\WD_http.pas"/>
+        <DCCReference Include="..\WD_httpDelphi.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -135,6 +135,12 @@
                 <DeployFile LocalName="Win32\Debug\WebDriver4DTests.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libPCRE.dylib" Class="DependencyModule"/>
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule"/>
+                <DeployFile LocalName="Win32\Debug\WebDriver4DTests.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>WebDriver4DTests.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>

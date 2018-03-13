@@ -21,9 +21,9 @@ uses
   System.SysUtils,
   TestWebDriver in 'TestWebDriver.pas',
   Webdriver4D in '..\Webdriver4D.pas',
-  delphi_driver in '..\delphi_driver.pas',
-  lazarus_driver in '..\lazarus_driver.pas',
-  JsonDataObjects in '..\JsonDataObjects.pas';
+  JsonDataObjects in '..\JsonDataObjects.pas',
+  WD_http in '..\WD_http.pas',
+  WD_httpDelphi in '..\WD_httpDelphi.pas';
 
 {frmSpSettings}
 
