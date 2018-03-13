@@ -46,6 +46,7 @@ type
     procedure CloseWindow(ParamSessionID: string = '');
     function GetAllCookie: string;
     function GetAllCookieJsonArray: string;
+    function GetCookieByName(cookieName: string): string;
     function AddCookie(cookieName, cookieValue: string): string;
     procedure DeleteAllCookie;
     procedure DeleteCookie(const cookieName: string);
@@ -59,11 +60,14 @@ type
     function GetCurrentWindowHandle: string;
     function GetElementAttribute(const Element, attributename: string): string;
     procedure GetURL(const URL: string);
+    function GetCurUrl: string;
     function NewSession(BrowserFileName: string = ''): string;
+    procedure DeleteSession(ParamSessionID: string = '');
+    function GetDocument: string;
+    function GetAllSession: string;
     procedure Save_screenshot(const FileName: string);
     procedure Set_Window_Size(const Width, Height: integer;
       WindowHandle: string = 'current');
-    procedure DeleteSession(ParamSessionID: string = '');
     procedure ElementClick(const Element: string);
     function Element_Location(const Element: string): string;
     procedure Element_ScreenShort(const Element, FileName: string);
@@ -75,7 +79,6 @@ type
     function FindElementsByLinkText(const LinkText: string): string;
     function FindElementsByID(const ID: string): string;
     function FindElementsByClassName(const ClasName: string): string;
-    function GetAllSession: string;
 
     procedure Implicitly_Wait(const waitTime: Double);
     procedure PageLoadTimeout(const Timeout: integer);
@@ -825,6 +828,18 @@ begin
   ProcResponse(Resp);
 end;
 
+function TWebDriver.GetDocument: string;
+var
+  command: string;
+begin
+  result := '';
+  if FSessionID <> '' then
+  begin
+    command := Host + '/session/' + FSessionID + '/source';
+    result := ProcResponse(FCmd.ExecuteGet(command));
+  end;
+end;
+
 function TWebDriver.GetAllCookieJsonArray: string;
 var
   command: string;
@@ -836,6 +851,50 @@ begin
     result := ProcResponse(Resp)
   else
     result := '[]';
+end;
+
+function TWebDriver.GetCookieByName(cookieName: string): string;
+var
+  command: string;
+  Resp: string;
+  S: string;
+  I: integer;
+  aryJson: TJsonArray;
+  tmpJson: TJsonObject;
+begin
+  // 用标准接口返回是错误,故用此方法
+  command := Host + '/session/' + FSessionID + '/cookie';
+  Resp := FCmd.ExecuteGet(command);
+  if Resp <> '' then
+    S := ProcResponse(Resp)
+  else
+    S := '[]';
+
+  aryJson := TJsonBaseObject.Parse(S) as TJsonArray;
+  if aryJson <> nil then
+  begin
+    // 数组JSON
+    for I := 0 to aryJson.Count - 1 do
+    begin
+      tmpJson := aryJson.O[I];
+      if tmpJson.S['name'] = cookieName then
+      begin
+        result := tmpJson.S['value'];
+        break;
+      end;
+    end;
+    aryJson.Free;
+  end;
+end;
+
+function TWebDriver.GetCurUrl: string;
+var
+  command: string;
+  Resp: string;
+begin
+  command := Host + '/session/' + FSessionID + '/url';
+  Resp := FCmd.ExecuteGet(command);
+  result := ProcResponse(Resp);
 end;
 
 function TWebDriver.ProcResponse(const Resp: string): string;
