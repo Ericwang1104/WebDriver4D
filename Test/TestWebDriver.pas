@@ -21,7 +21,10 @@ type
   TestTPhantomjs = class(TTestCase)
   strict private
     FWD: TWebDriver;
+    procedure StartIEDriver;
     procedure LoginWeibo;
+    procedure StartFireFox;
+    procedure StartPhantomjs;
   private
     FCMD: TDelphiCommand;
 
@@ -69,6 +72,7 @@ type
     procedure TestScreenShot;
     procedure TestGetElement;
     procedure TestGetElements;
+    procedure TestItJuzi;
     procedure TestLoginWeibo;
     procedure TestSaveElementScreen;
     procedure TestSendKey;
@@ -99,6 +103,14 @@ uses
 procedure TestTPhantomjs.CheckHasError;
 begin
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
+end;
+
+procedure TestTPhantomjs.StartIEDriver;
+begin
+  FWD.BrowserType :=btIE;
+  FWD.DiskCache :=false;
+  FWD.LogFile :='d:\webdriver\ie_log.log';
+  FWD.StartPm('D:\webdriver\IEDriverServer_x86.exe');
 end;
 
 procedure TestTPhantomjs.LoginWeibo;
@@ -135,17 +147,36 @@ end;
 procedure TestTPhantomjs.SetUp;
 begin
   FWD :=TWebDriver.Create(nil);
-  FWD.Port :=1008;
+  //StartFireFox;
+  StartIEDriver;
+  //StartPhantomjs;
 
   FCMD :=TDelphiCommand.Create(nil);
   FWD.Cmd :=FCMD;
-  TestInit
+  //TestInit
+end;
+
+procedure TestTPhantomjs.StartFireFox;
+begin
+  FWD.BrowserType :=btFirefox;
+  FWD.DiskCache :=false;
+  fwd.LogFile :='d:\webdriver\firefox_log.log';
+  FWD.StartPm('d:\webdriver\geckodriver_x86.exe');
+end;
+
+procedure TestTPhantomjs.StartPhantomjs;
+begin
+  FWD.BrowserType :=btPhantomjs;
+  FWD.DiskCache :=false;
+  FWD.LogFile :='e:\temp\phantomjs_log.log';
+  FWD.StartPm('D:\webdriver\Phantomjs.exe');
+
 end;
 
 procedure TestTPhantomjs.TearDown;
 begin
-
-  FreeAndNil(FCMD);
+  if Assigned(FCMD) then
+    FreeAndNil(FCMD);
   FreeAndnil(FWD);
 
 end;
@@ -760,7 +791,7 @@ end;
 
 procedure TestTPhantomjs.TestTerminatePhantomjs;
 begin
-  FWD.TerminatePhantomjs;
+  FWD.TerminateWebDriver;
   // TODO: Validate method results
 end;
 
@@ -768,6 +799,39 @@ procedure TestTPhantomjs.TestClearAll;
 begin
   FWD.Clear;
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
+end;
+
+procedure TestTPhantomjs.TestItJuzi;
+var
+  Element :string;
+  html:string;
+  stream:TStringStream;
+begin
+  //FWD.Clear;
+  FWD.NewSession;
+  FWD.Set_Window_Size(1920,1080);
+  FWD.Implicitly_Wait(5);
+  FWD.GetURL('https://www.itjuzi.com/user/login?flag=radar&redirect=/investevent');
+
+  // input username
+  html :=FWd.GetDocument;
+  //html :=fwd.ExecuteScript('return document.body.InnerHTML' );
+  stream :=TStringStream.Create('',TEncoding.UTF8);
+  try
+    stream.WriteString(html);
+    stream.SaveToFile('e:\temp\test.html');
+  finally
+    FreeAndNil(stream);
+  end;
+  Element :=FWD.findElementByID('create_account_email');
+  FWD.SendKey(Element,'wac@yeah.net');
+  //input password
+  Element :=FWD.FindElementByID('create_account_password');
+  FWD.SendKey(Element,'123456');
+  Element :=FWD.FindElementByID('login_btn');
+  FWD.ElementClick(Element);
+
+  FWD.Save_screenshot('e:\temp\test.png');
 end;
 
 function TestTBrowserCMD.NewSession: string;

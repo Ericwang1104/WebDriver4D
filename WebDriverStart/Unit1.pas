@@ -5,7 +5,8 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Webdriver4D,
-	Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.IniFiles;
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, System.IniFiles,
+  WD_httpDelphi, WD_http;
 
 type
   TForm1 = class(TForm)
@@ -41,8 +42,7 @@ var
 
 implementation
 
-uses
-  delphi_driver;
+
 
 {$R *.dfm}
 
@@ -66,7 +66,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   p: string;
 begin
-  FPM.CookieFiles :=AppPath +'phantomjs.cookies';
+  FPM.CookieFiles :=AppPath +'Webdriver.cookies';
   fpm.DiskCache :=true;
   fpm.DiskCachePath :=AppPath+'cache';
 

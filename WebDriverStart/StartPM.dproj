@@ -1,7 +1,7 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{8331C3C4-7603-496F-AB96-C889289FCFEB}</ProjectGuid>
-        <ProjectVersion>18.3</ProjectVersion>
+        <ProjectVersion>18.4</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <MainSource>StartPM.dpr</MainSource>
         <Base>True</Base>
@@ -97,9 +97,11 @@
             <Form>Form1</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\Webdriver4D.pas"/>
         <DCCReference Include="..\delphi_driver.pas"/>
         <DCCReference Include="..\JsonDataObjects.pas"/>
+        <DCCReference Include="..\WD_http.pas"/>
+        <DCCReference Include="..\WD_httpDelphi.pas"/>
+        <DCCReference Include="..\Webdriver4D.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

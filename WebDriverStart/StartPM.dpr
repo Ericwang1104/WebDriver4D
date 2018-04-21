@@ -3,9 +3,11 @@ program StartPM;
 uses
   Vcl.Forms,
   Unit1 in 'Unit1.pas' {Form1},
-  Webdriver4D in '..\Webdriver4D.pas',
   delphi_driver in '..\delphi_driver.pas',
-  JsonDataObjects in '..\JsonDataObjects.pas';
+  JsonDataObjects in '..\JsonDataObjects.pas',
+  WD_http in '..\WD_http.pas',
+  WD_httpDelphi in '..\WD_httpDelphi.pas',
+  Webdriver4D in '..\Webdriver4D.pas';
 
 {$R *.res}
 

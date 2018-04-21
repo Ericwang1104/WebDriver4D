@@ -9,3 +9,4 @@ __history/
 *.cookies
 __recovery/
 Test/weibo_allcookies.txt
+*.exe
