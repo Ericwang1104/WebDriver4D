@@ -1,0 +1,35 @@
+IE webdriver
+
+http调用的URL
+http://127.0.0.1:5555
+
+1.将IE所有区域都不勾选保护模式
+2.将iedriver.exe复制到IE文件夹,并启动
+
+
+
+
+Firefox webdriver
+
+http调用的URL
+http://127.0.0.1:4444/wd/hub
+
+=============================================
+V47以前的旧版 直接启动(只要一个文件)
+使用 selenium-server-standalone-2.53.1.jar
+
+http调用--->selenium-server--->firefox
+
+java -jar selenium-server-standalone-2.53.1.jar
+可以将上面的命令建立批处理文件
+
+
+============================================
+V47+
+需要两个文件(selenium-server-standalone-3.4.0.jar, geckodrive.exe)
+geckodrive.exe需要放在搜索路径中,selenium-server-standalone-3.4.0.jar启动后会调用它
+
+http调用--->selenium-server--->geckodrive--->firefox
+
+java -jar selenium-server-standalone-3.4.0.jar
+可以将上面的命令建立批处理文件

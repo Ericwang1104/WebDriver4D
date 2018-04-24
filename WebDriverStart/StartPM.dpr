@@ -2,18 +2,17 @@ program StartPM;
 
 uses
   Vcl.Forms,
-  Unit1 in 'Unit1.pas' {Form1},
-  delphi_driver in '..\delphi_driver.pas',
+  frm_WebDrvier_Service in 'frm_WebDrvier_Service.pas' {TWebDriverService},
   JsonDataObjects in '..\JsonDataObjects.pas',
-  WD_http in '..\WD_http.pas',
+  Webdriver4D in '..\Webdriver4D.pas',
   WD_httpDelphi in '..\WD_httpDelphi.pas',
-  Webdriver4D in '..\Webdriver4D.pas';
+  WD_http in '..\WD_http.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TTWebDriverService, TWebDriverService);
   Application.Run;
 end.

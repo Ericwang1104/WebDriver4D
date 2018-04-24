@@ -12,35 +12,31 @@ type
 
   TWebDriver = class(TComponent)
   strict private
-    FPort: integer;
-    FSessionID: string;
-    function BuildParams: string;
     procedure CutImage(const FileName: string; Pic: string;
       X, Y, Width, Height: integer);
-    function ProcResponse(const Resp: string): string;
   private
     FAddress: string;
-    FBrowserType: TDriverType;
     FCmd: TDriverCommand;
-    FCookieFiles: string;
-    FDiskCache: Boolean;
-    FDiskCachePath: string;
     FErrorMessage: string;
     FHasError: Boolean;
-    FLogFile: string;
-    FPath: string;
     FJson: TJsonObject;
     FProcessInfo: TProcessInformation;
     FStartupInfo: TStartupInfo;
     function GetHost: string;
     function GetTimeout: integer;
     procedure SaveScreenToFileName(const FileName, Base64File: string);
-    procedure SetBrowserType(const Value: TDriverType);
     procedure SetTimeout(const Value: integer);
+  strict protected
+    FLogFile: string;
+    FPath: string;
+    FPort: integer;
+    FSessionID: string;
+    function BuildParams: string; virtual;
+    function ProcResponse(const Resp: string): string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure StartPm(const ExeName: string);
+    procedure StartDriver(const ExeName: string; const Args: string = ''); virtual;
     procedure Assign(Source: TPersistent); override;
     procedure CloseWindow(ParamSessionID: string = '');
     function GetAllCookie: string;
@@ -60,7 +56,7 @@ type
     function GetElementAttribute(const Element, attributename: string): string;
     procedure GetURL(const URL: string);
     function GetCurUrl: string;
-    function NewSession(BrowserFileName: string = ''): string;
+    function NewSession: string; virtual; abstract;
     procedure DeleteSession(ParamSessionID: string = '');
     function GetDocument: string;
     function GetAllSession: string;
@@ -71,8 +67,8 @@ type
     function Element_Location(const Element: string): string;
     procedure Element_ScreenShort(const Element, FileName: string);
     function Element_Size(const Element: string): string;
-    function ExecuteScript(const Script: string;
-      const Args: string = '[]'): string;
+    function ExecuteScript(const Script: string; const Args: string = '[]'):
+        string; virtual;
     function FindElementByName(const Name: string): string;
     function FindElementsByXPath(XPath: string): string;
     function FindElementsByTag(const TagName: string): string;
@@ -87,15 +83,11 @@ type
     procedure SendKey(const Element, Key: string);
     procedure SwitchToFrame(const FrameID: string);
     procedure TerminateWebDriver;
-    property CookieFiles: string read FCookieFiles write FCookieFiles;
-    property DiskCache: Boolean read FDiskCache write FDiskCache;
-    property DiskCachePath: string read FDiskCachePath write FDiskCachePath;
     property ErrorMessage: string read FErrorMessage;
     property HasError: Boolean read FHasError;
     property LogFile: string read FLogFile write FLogFile;
     property Host: string read GetHost;
     property Address: string read FAddress write FAddress;
-    property BrowserType: TDriverType read FBrowserType write SetBrowserType;
     property Cmd: TDriverCommand read FCmd write FCmd;
     property Port: integer read FPort write FPort;
     property Path: string read FPath write FPath;
@@ -103,6 +95,52 @@ type
   published
     procedure Clear;
     property Timeout: integer read GetTimeout write SetTimeout;
+  end;
+
+  TPhantomjs = class(TWebDriver)
+  private
+    FCookieFiles: string;
+    FDiskCache: Boolean;
+    FDiskCachePath: string;
+  strict protected
+    function BuildParams: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure Assign(Source: TPersistent); override;
+    function ExecuteScript(const Script: string; const Args: string = '[]'):
+        string; override;
+    function NewSession: string; override;
+    property CookieFiles: string read FCookieFiles write FCookieFiles;
+    property DiskCache: Boolean read FDiskCache write FDiskCache;
+    property DiskCachePath: string read FDiskCachePath write FDiskCachePath;
+  end;
+
+  TIEDriver = class(TWebDriver)
+  strict protected
+    function BuildParams: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    function NewSession: string; override;
+  end;
+
+  TFireFoxDriver = class(TWebDriver)
+  private
+    FBrowserFileName: string;
+  strict protected
+    function BuildParams: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    function NewSession: string; override;
+    property BrowserFileName: string read FBrowserFileName write FBrowserFileName;
+  end;
+
+  TChromeDriver = class(TWebDriver)
+  strict protected
+    function BuildParams: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    function NewSession: string; override;
+    procedure StartDriver(const ExeName: string; const Args: string = ''); override;
   end;
 
 implementation
@@ -116,11 +154,6 @@ begin
   FJson := TJsonObject.Create;
   FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
   FAddress := '127.0.0.1';
-  BrowserType := btPhantomjs;
-
-  FCookieFiles := '';
-  FDiskCache := false;
-  FDiskCachePath := '';
   FLogFile := '';
   FHasError := false;
   FErrorMessage := '';
@@ -141,48 +174,25 @@ end;
 
 procedure TWebDriver.Assign(Source: TPersistent);
 var
-  Ph: TWebDriver;
+  WD: TWebDriver;
 begin
   inherited;
   if Source is TWebDriver then
   begin
-    Ph := Source as TWebDriver;
-    self.Address := Ph.Address;
-    self.BrowserType := Ph.BrowserType;
-    self.Port := Ph.Port;
-    self.Path := Ph.Path;
-    self.CookieFiles := Ph.CookieFiles;
-    self.DiskCache := Ph.DiskCache;
-    self.DiskCachePath := Ph.DiskCachePath;
-    self.Timeout := Ph.Timeout;
+    WD := Source as TWebDriver;
+    self.Address := WD.Address;
+
+    self.Port := WD.Port;
+    self.Path := WD.Path;
+
+    self.Timeout := WD.Timeout;
   end;
 end;
 
 function TWebDriver.BuildParams: string;
 begin
 
-  result := result + '  --webdriver=' + FAddress + ':' + inttostr(FPort);
-  if CookieFiles <> '' then
-  begin
-    result := result + ' --cookies-file=' + FCookieFiles;
-  end;
-  if FDiskCache then
-  begin
-    result := result + ' --disk-cache=true';
-  end
-  else
-  begin
-    result := result + ' --disk-cache=false';
-  end;
-  if FDiskCachePath <> '' then
-  begin
-    result := result + ' --disk-cache-path=' + FDiskCachePath;
-  end;
-
-  if FLogFile <> '' then
-  begin
-    result := result + ' --webdriver-logfile=' + FLogFile;
-  end;
+  
 end;
 
 procedure TWebDriver.CloseWindow(ParamSessionID: string = '');
@@ -300,24 +310,17 @@ begin
   result := ProcResponse(Resp);
 end;
 
-function TWebDriver.ExecuteScript(const Script: string;
-  const Args: string = '[]'): string;
+function TWebDriver.ExecuteScript(const Script: string; const Args: string =
+    '[]'): string;
 var
   command: string;
   Data: string;
   Resp: string;
 begin
-  case BrowserType of
-    btPhantomjs:
-      command := Host + '/session/' + FSessionID + '/execute';
-  else
-    command := Host + '/session/' + FSessionID + '/execute/sync';
-  end;
-
+  command := Host + '/session/' + FSessionID + '/execute/sync';
   FJson.Clear;
   FJson.S['script'] := Script;
   FJson.A['args'].FromJSON(Args);
-
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   result := ProcResponse(Resp);
@@ -453,65 +456,6 @@ begin
   ProcResponse(Resp);
 end;
 
-function TWebDriver.NewSession(BrowserFileName: string = ''): string;
-const
-  Phantomjs_PARAM =
-    '{"desiredCapabilities": {"takesScreenshot":false,"browserName":"phantomjs",'
-    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
-    + ' , "platform": "windows", "version": "", "javascriptEnabled": true},' +
-    '"capabilities": {"takesScreenshot":false,"browserName": "phantomjs", "firstMatch": [],'
-    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
-    + ',"platform": "windows", "alwaysMatch": {}, "javascriptEnabled": true, "version": ""}}';
-  IE_Param =
-    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "internet explorer", "platformName": "windows"}}, "desiredCapabilities": {"browserName": "internet explorer", "platform": "WINDOWS"}}';
-  Firefox_Param =
-    '{"capabilities": {"firstMatch": [], "alwaysMatch": {"browserName": "firefox", '
-    + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' +
-    '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
-var
-  command: string;
-  Resp: string;
-  JsStr: string;
-begin
-  result := '';
-  command := Host + '/session';
-  JsStr := ReplaceStr(BrowserFileName, '\', '\\');
-  case BrowserType of
-    btPhantomjs:
-      Resp := FCmd.ExecutePost(command, Phantomjs_PARAM);
-    btIE:
-      Resp := FCmd.ExecutePost(command, IE_Param);
-    btFirefox:
-      Resp := FCmd.ExecutePost(command, Format(Firefox_Param, [JsStr, JsStr]));
-  end;
-  if Resp <> '' then
-  begin
-    FJson.FromJSON(Resp);
-    if not FJson.Contains('sessionId') then
-      FJson.FromJSON(FJson.O['value'].ToJSON());
-    FSessionID := FJson.S['sessionId'];
-    if FSessionID <> '' then
-    begin
-      result := FSessionID;
-      FHasError := false;
-      FErrorMessage := '';
-    end
-    else
-    begin
-      FHasError := True;
-      if FJson.Contains('message') then
-        FErrorMessage := FJson.S['message']
-      else
-        FErrorMessage := Resp;
-    end;
-  end
-  else
-  begin
-    FHasError := True;
-    FErrorMessage := 'time out';
-  end;
-end;
-
 procedure TWebDriver.Quit;
 begin
   if FSessionID <> '' then
@@ -558,7 +502,8 @@ begin
   end;
 end;
 
-procedure TWebDriver.StartPm(const ExeName: string);
+procedure TWebDriver.StartDriver(const ExeName: string; const Args: string =
+    '');
 var
   command: string;
 begin
@@ -571,9 +516,12 @@ begin
   FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
   FStartupInfo.dwFlags := STARTF_USESHOWWINDOW;
   FStartupInfo.wShowWindow := SW_HIDE;
-  command := self.BuildParams;
+  if Args='' then
+    command :=  self.BuildParams
+  else
+    command :=Args;
 
-  if CreateProcess(Pchar(ExeName), Pchar(command), nil, nil, false,
+  if CreateProcess(nil, Pchar(ExeName+' '+command), nil, nil, false,
     NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
   begin
 
@@ -965,28 +913,6 @@ begin
   end;
 end;
 
-procedure TWebDriver.SetBrowserType(const Value: TDriverType);
-begin
-  FBrowserType := Value;
-  case FBrowserType of
-    btPhantomjs:
-      begin
-        FPort := 8080;
-        FPath := '/wd/hub';
-      end;
-    btIE:
-      begin
-        FPort := 5555;
-        FPath := '';
-      end;
-    btFirefox:
-      begin
-        FPort := 4444;
-        FPath := '/wd/hub';
-      end;
-  end;
-end;
-
 procedure TWebDriver.SetTimeout(const Value: integer);
 begin
   FCmd.Timeout := Value;
@@ -1005,6 +931,312 @@ begin
   Data := FJson.ToJSON();
   Resp := FCmd.ExecutePost(command, Data);
   ProcResponse(Resp);
+end;
+
+constructor TPhantomjs.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort := 8080;
+  FPath := '/wd/hub';
+  FCookieFiles := '';
+  FDiskCache := false;
+  FDiskCachePath := '';
+end;
+
+procedure TPhantomjs.Assign(Source: TPersistent);
+var
+  wd:TPhantomjs;
+begin
+  inherited;
+  if Source is TPhantomjs then
+  begin
+    wd :=Source as TPhantomjs;
+    self.CookieFiles := WD.CookieFiles;
+    self.DiskCache := WD.DiskCache;
+    self.DiskCachePath := WD.DiskCachePath;
+  end;
+end;
+
+function TPhantomjs.BuildParams: string;
+begin
+
+  result := result + '  --webdriver=' + Address + ':' + inttostr(Port);
+  if CookieFiles <> '' then
+  begin
+    result := result + ' --cookies-file=' + CookieFiles;
+  end;
+  if FDiskCache then
+  begin
+    result := result + ' --disk-cache=true';
+  end
+  else
+  begin
+    result := result + ' --disk-cache=false';
+  end;
+  if DiskCachePath <> '' then
+  begin
+    result := result + ' --disk-cache-path=' + DiskCachePath;
+  end;
+
+  if FLogFile <> '' then
+  begin
+    result := result + ' --webdriver-logfile=' + FLogFile;
+  end;
+end;
+
+function TPhantomjs.ExecuteScript(const Script: string; const Args: string =
+    '[]'): string;
+var
+  command: string;
+  Data: string;
+  Resp: string;
+begin
+  command := Host + '/session/' + FSessionID + '/execute';
+  FJson.Clear;
+  FJson.S['script'] := Script;
+  FJson.A['args'].FromJSON(Args);
+  Data := FJson.ToJSON();
+  Resp := FCmd.ExecutePost(command, Data);
+  result := ProcResponse(Resp);
+end;
+
+function TPhantomjs.NewSession: string;
+const
+  Phantomjs_PARAM =
+    '{"desiredCapabilities": {"takesScreenshot":false,"browserName":"phantomjs",'
+    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
+    + ' , "platform": "windows", "version": "", "javascriptEnabled": true},' +
+    '"capabilities": {"takesScreenshot":false,"browserName": "phantomjs", "firstMatch": [],'
+    + '"phantomjs.page.settings.userAgent": "Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"'
+    + ',"platform": "windows", "alwaysMatch": {}, "javascriptEnabled": true, "version": ""}}';
+var
+  command: string;
+  Resp: string;
+  JsStr: string;
+begin
+  result := '';
+  command := Host + '/session';
+  Resp := FCmd.ExecutePost(command, Phantomjs_PARAM);
+  if Resp <> '' then
+  begin
+    FJson.FromJSON(Resp);
+    if not FJson.Contains('sessionId') then
+      FJson.FromJSON(FJson.O['value'].ToJSON());
+    FSessionID := FJson.S['sessionId'];
+    if FSessionID <> '' then
+    begin
+      result := FSessionID;
+      FHasError := false;
+      FErrorMessage := '';
+    end
+    else
+    begin
+      FHasError := True;
+      if FJson.Contains('message') then
+        FErrorMessage := FJson.S['message']
+      else
+        FErrorMessage := Resp;
+    end;
+  end
+  else
+  begin
+    FHasError := True;
+    FErrorMessage := 'time out';
+  end;
+end;
+
+constructor TFireFoxDriver.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort :=4444;
+end;
+
+function TFireFoxDriver.BuildParams: string;
+begin
+
+  result :=' --port 4444';
+end;
+
+function TFireFoxDriver.NewSession: string;
+const
+   Firefox_Param =
+    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "firefox", '
+    + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' +
+    '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
+var
+  command: string;
+  Resp: string;
+  JsStr: string;
+begin
+  if not FileExists(FBrowserFileName) then
+  begin
+    raise Exception.Create('firefox file is not exits.'+FBrowserFileName+'.please setup browserfile property');
+  end;
+
+  result := '';
+  command := Host + '/session';
+  JsStr := ReplaceStr(FBrowserFileName, '\', '\\');
+  Resp := FCmd.ExecutePost(command, Format(Firefox_Param, [JsStr, JsStr]));
+  if Resp <> '' then
+  begin
+    FJson.FromJSON(Resp);
+    if not FJson.Contains('sessionId') then
+      FJson.FromJSON(FJson.O['value'].ToJSON());
+    FSessionID := FJson.S['sessionId'];
+    if FSessionID <> '' then
+    begin
+      result := FSessionID;
+      FHasError := false;
+      FErrorMessage := '';
+    end
+    else
+    begin
+      FHasError := True;
+      if FJson.Contains('message') then
+        FErrorMessage := FJson.S['message']
+      else
+        FErrorMessage := Resp;
+    end;
+  end
+  else
+  begin
+    FHasError := True;
+    FErrorMessage := 'time out';
+  end;
+end;
+
+constructor TIEDriver.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort :=5555;
+end;
+
+function TIEDriver.BuildParams: string;
+begin
+
+  result :=' /port='+IntToStr(FPort);
+end;
+
+function TIEDriver.NewSession: string;
+const
+  IE_Param =
+    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "internet explorer", "platformName": "windows"}}, "desiredCapabilities": {"browserName": "internet explorer", "platform": "WINDOWS"}}';
+var
+  command: string;
+  Resp: string;
+
+begin
+  result := '';
+  command := Host + '/session';
+  Resp := FCmd.ExecutePost(command, IE_Param);
+  if Resp <> '' then
+  begin
+    FJson.FromJSON(Resp);
+    if not FJson.Contains('sessionId') then
+      FJson.FromJSON(FJson.O['value'].ToJSON());
+    FSessionID := FJson.S['sessionId'];
+    if FSessionID <> '' then
+    begin
+      result := FSessionID;
+      FHasError := false;
+      FErrorMessage := '';
+    end
+    else
+    begin
+      FHasError := True;
+      if FJson.Contains('message') then
+        FErrorMessage := FJson.S['message']
+      else
+        FErrorMessage := Resp;
+    end;
+  end
+  else
+  begin
+    FHasError := True;
+    FErrorMessage := 'time out';
+  end;
+end;
+
+constructor TChromeDriver.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort :=6666;
+end;
+
+function TChromeDriver.BuildParams: string;
+begin
+
+   result :=' --port='+IntToStr(FPort);
+end;
+
+function TChromeDriver.NewSession: string;
+const
+  Chorme_Param =
+    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "chrome",'+
+    ' "platformName": "any", "goog:chromeOptions": {"extensions": [], "args": []}}},'+
+    ' "desiredCapabilities": {"browserName": "chrome", "version": "", "platform": "ANY",'+
+    ' "goog:chromeOptions": {"extensions": [], "args": []}}}';
+var
+  command: string;
+  Resp: string;
+  JsStr: string;
+begin
+  result := '';
+  command := Host + '/session';
+  Resp := FCmd.ExecutePost(command, Chorme_Param);
+
+  if Resp <> '' then
+  begin
+    FJson.FromJSON(Resp);
+    if not FJson.Contains('sessionId') then
+      FJson.FromJSON(FJson.O['value'].ToJSON());
+    FSessionID := FJson.S['sessionId'];
+    if FSessionID <> '' then
+    begin
+      result := FSessionID;
+      FHasError := false;
+      FErrorMessage := '';
+    end
+    else
+    begin
+      FHasError := True;
+      if FJson.Contains('message') then
+        FErrorMessage := FJson.S['message']
+      else
+        FErrorMessage := Resp;
+    end;
+  end
+  else
+  begin
+    FHasError := True;
+    FErrorMessage := 'time out';
+  end;
+end;
+
+procedure TChromeDriver.StartDriver(const ExeName: string; const Args: string =
+    '');
+var
+  command: string;
+begin
+  if not FileExists(ExeName) then
+    raise Exception.Create('driver file not exists.'+ExeName);
+
+  if FProcessInfo.hProcess <> 0 then
+    Exit;
+  FillChar(FStartupInfo, SizeOf(FStartupInfo), 0);
+  FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
+  FStartupInfo.dwFlags := STARTF_USESHOWWINDOW;
+  FStartupInfo.wShowWindow := SW_HIDE;
+  if Args='' then
+    command :=  self.BuildParams
+  else
+    command :=Args;
+
+  if CreateProcess(nil, Pchar(ExeName+command), nil, nil, false,
+    NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
+  begin
+
+  end;
 end;
 
 end.

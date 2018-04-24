@@ -1,9 +1,9 @@
-object Form1: TForm1
+object TWebDriverService: TTWebDriverService
   Left = 0
   Top = 0
-  Caption = 'PhantomJs Server'
-  ClientHeight = 283
-  ClientWidth = 564
+  Caption = 'WebDriver-service'
+  ClientHeight = 331
+  ClientWidth = 718
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -20,11 +20,11 @@ object Form1: TForm1
   PixelsPerInch = 96
   TextHeight = 13
   object Button1: TButton
-    Left = 48
-    Top = 57
+    Left = 40
+    Top = 201
     Width = 142
     Height = 49
-    Caption = #21551#21160'PhantomJs'
+    Caption = 'start service'
     TabOrder = 0
     OnClick = Button1Click
   end
@@ -39,8 +39,8 @@ object Form1: TForm1
     OnChange = Memo1Change
   end
   object Button2: TButton
-    Left = 216
-    Top = 57
+    Left = 232
+    Top = 201
     Width = 153
     Height = 49
     Caption = #32456#27490'Phantomjs'
@@ -48,12 +48,36 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object Button3: TButton
-    Left = 408
-    Top = 57
+    Left = 432
+    Top = 201
     Width = 137
     Height = 49
     Caption = #28165#31354'Session'
     TabOrder = 3
     OnClick = Button3Click
+  end
+  object rgBrowserType: TRadioGroup
+    Left = 32
+    Top = 56
+    Width = 513
+    Height = 105
+    Caption = 'BrowserType'
+    Columns = 4
+    ItemIndex = 0
+    Items.Strings = (
+      'Ie driver'
+      'firefox driver'
+      'chrome driver'
+      'phantomjs driver')
+    TabOrder = 4
+  end
+  object Button4: TButton
+    Left = 40
+    Top = 256
+    Width = 142
+    Height = 49
+    Caption = 'New Session'
+    TabOrder = 5
+    OnClick = Button4Click
   end
 end

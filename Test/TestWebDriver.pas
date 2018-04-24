@@ -18,11 +18,12 @@ uses
 type
   // Test methods for class TPhantomjs
 
-  TestTPhantomjs = class(TTestCase)
+  TestTWebDriver = class(TTestCase)
   strict private
     FWD: TWebDriver;
     procedure StartIEDriver;
     procedure LoginWeibo;
+    procedure StartChromeDriver;
     procedure StartFireFox;
     procedure StartPhantomjs;
   private
@@ -33,7 +34,6 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
     procedure TestCloseWindow;
-    procedure TestStartPm;
     procedure TestFindElementByID;
     procedure TestFindElementByTag;
     procedure TestFindElementByClassName;
@@ -61,6 +61,7 @@ type
     procedure TestRefresh;
     procedure TestTerminatePhantomjs;
     procedure TestClearAll;
+    procedure TestStartIEDriver;
   published
     procedure TestClearAllSession;
     procedure TestDeleteSession;
@@ -95,25 +96,47 @@ type
     procedure TestExecutePost;
   end;
 
+  TestTIEDriver = class(TTestCase)
+  private
+    FCMD: TDelphiCommand;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStartIEDriver;
+  end;
+
+type
+  TestFirefoxDriver = class(TTestCase)
+  private
+    FCMD: TDelphiCommand;
+    FWD: TWebDriver;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStartFirefoxDriver;
+  end;
+
 implementation
 
 uses
   Vcl.Imaging.pngimage;
 
-procedure TestTPhantomjs.CheckHasError;
+procedure TestTWebDriver.CheckHasError;
 begin
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
 end;
 
-procedure TestTPhantomjs.StartIEDriver;
+procedure TestTWebDriver.StartIEDriver;
 begin
-  FWD.BrowserType :=btIE;
-  FWD.DiskCache :=false;
+  FWD :=TWebDriver.Create(nil);
+  FWD.Port :=8080;
   FWD.LogFile :='d:\webdriver\ie_log.log';
-  FWD.StartPm('D:\webdriver\IEDriverServer_x86.exe');
+  FWD.StartDriver('..\WebDriver\IEDriverServer_x86.exe');
 end;
 
-procedure TestTPhantomjs.LoginWeibo;
+procedure TestTWebDriver.LoginWeibo;
 var
   hand: string;
   Ele: string;
@@ -144,9 +167,9 @@ begin
 
 end;
 
-procedure TestTPhantomjs.SetUp;
+procedure TestTWebDriver.SetUp;
 begin
-  FWD :=TWebDriver.Create(nil);
+
   //StartFireFox;
   StartIEDriver;
   //StartPhantomjs;
@@ -156,24 +179,27 @@ begin
   //TestInit
 end;
 
-procedure TestTPhantomjs.StartFireFox;
+procedure TestTWebDriver.StartChromeDriver;
 begin
-  FWD.BrowserType :=btFirefox;
-  FWD.DiskCache :=false;
+  FWD.Port :=6666;
+  FWD.StartDriver('..\..\..\WebDriver\ChromeDriver.exe');
+end;
+
+procedure TestTWebDriver.StartFireFox;
+begin
   fwd.LogFile :='d:\webdriver\firefox_log.log';
-  FWD.StartPm('d:\webdriver\geckodriver_x86.exe');
+  FWD.StartDriver('..\..\..\webdriver\geckodriver_x86.exe');
 end;
 
-procedure TestTPhantomjs.StartPhantomjs;
+procedure TestTWebDriver.StartPhantomjs;
 begin
-  FWD.BrowserType :=btPhantomjs;
-  FWD.DiskCache :=false;
+
   FWD.LogFile :='e:\temp\phantomjs_log.log';
-  FWD.StartPm('D:\webdriver\Phantomjs.exe');
+  FWD.StartDriver('D:\webdriver\Phantomjs.exe');
 
 end;
 
-procedure TestTPhantomjs.TearDown;
+procedure TestTWebDriver.TearDown;
 begin
   if Assigned(FCMD) then
     FreeAndNil(FCMD);
@@ -181,7 +207,7 @@ begin
 
 end;
 
-procedure TestTPhantomjs.TestClearAllSession;
+procedure TestTWebDriver.TestClearAllSession;
 var
   AllSession: string;
   Json: TJsonArray;
@@ -206,12 +232,12 @@ begin
   end;
 end;
 
-procedure TestTPhantomjs.TestDeleteSession;
+procedure TestTWebDriver.TestDeleteSession;
 begin
   FWD.DeleteSession;
 end;
 
-procedure TestTPhantomjs.TestExecuteScript;
+procedure TestTWebDriver.TestExecuteScript;
 var
   xxx: string;
 begin
@@ -227,7 +253,7 @@ begin
   FWD.Save_screenshot('..\temp.png');
 end;
 
-procedure TestTPhantomjs.TestGetAllCookies;
+procedure TestTWebDriver.TestGetAllCookies;
 var
   Element: string;
   enabled: string;
@@ -277,7 +303,7 @@ begin
 
 end;
 
-procedure TestTPhantomjs.TestGetURL;
+procedure TestTWebDriver.TestGetURL;
 begin
 
   FWD.NewSession;
@@ -285,27 +311,26 @@ begin
   FWD.GetURL('http://m.weibo.cn');
 end;
 
-procedure TestTPhantomjs.TestInit;
+procedure TestTWebDriver.TestInit;
 var
   ExeName: string;
   CookieFiles: string;
+  Ph:TPhantomjs;
 begin
-  FWD.BrowserType := btPhantomjs;
+  Ph :=TPhantomjs.Create(nil);
+  FWd :=Ph;
   FWD.Address := '127.0.0.1';
   FWD.Port :=8080;
-  ExeName := '..\..\..\Phantomjs.exe';
-  CookieFiles := '..\..\..\phantomjs.cookies';
-  FWD.CookieFiles :=CookieFiles;
-  //FWD.StartPm(ExeName);
+  Ph.StartDriver('..\..\..\WebDriver\Phantomjs.exe');
 end;
 
-procedure TestTPhantomjs.TestNewSession;
+procedure TestTWebDriver.TestNewSession;
 begin
 
   FWD.NewSession;
 end;
 
-procedure TestTPhantomjs.TestScreenShot;
+procedure TestTWebDriver.TestScreenShot;
 var
   hand: string;
   Ele: string;
@@ -363,7 +388,7 @@ begin
 
 end;
 
-procedure TestTPhantomjs.TestGetElement;
+procedure TestTWebDriver.TestGetElement;
 var
   Element: string;
 begin
@@ -377,7 +402,7 @@ begin
   CheckHasError;
 end;
 
-procedure TestTPhantomjs.TestGetElements;
+procedure TestTWebDriver.TestGetElements;
 var
   divs: string;
   QJ: TJsonArray;
@@ -424,7 +449,7 @@ begin
   end;
 end;
 
-procedure TestTPhantomjs.TestLoginWeibo;
+procedure TestTWebDriver.TestLoginWeibo;
 var
   Element: string;
   enabled: string;
@@ -474,7 +499,7 @@ begin
 
 end;
 
-procedure TestTPhantomjs.TestSaveElementScreen;
+procedure TestTWebDriver.TestSaveElementScreen;
 var
   Element: string;
 begin
@@ -494,7 +519,7 @@ begin
   FWD.Element_ScreenShort(Element, 'e:\temp\login.png');
 end;
 
-procedure TestTPhantomjs.TestSendKey;
+procedure TestTWebDriver.TestSendKey;
 var
   Element: string;
 begin
@@ -522,14 +547,14 @@ begin
 
 end;
 
-procedure TestTPhantomjs.TestSetWindowSize;
+procedure TestTWebDriver.TestSetWindowSize;
 begin
   TestInit;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
 end;
 
-procedure TestTPhantomjs.TestCloseWindow;
+procedure TestTWebDriver.TestCloseWindow;
 var
   ParamSessionID: string;
 begin
@@ -539,17 +564,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestStartPm;
-var
-  cookieFile: string;
-  ExeName: string;
-begin
-  // TODO: Setup method call parameters
-  FWD.StartPm(ExeName);
-  // TODO: Validate method results
-end;
-
-procedure TestTPhantomjs.TestFindElementByID;
+procedure TestTWebDriver.TestFindElementByID;
 var
   ReturnValue: string;
   ID: string;
@@ -559,7 +574,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementByTag;
+procedure TestTWebDriver.TestFindElementByTag;
 var
   ReturnValue: string;
   TagName: string;
@@ -569,7 +584,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementByClassName;
+procedure TestTWebDriver.TestFindElementByClassName;
 var
   ReturnValue: string;
   ClasName: string;
@@ -579,7 +594,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElement;
+procedure TestTWebDriver.TestFindElement;
 var
   ReturnValue: string;
   KeyName: string;
@@ -590,7 +605,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElements;
+procedure TestTWebDriver.TestFindElements;
 var
   ReturnValue: string;
   KeyName: string;
@@ -601,7 +616,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementByLinkText;
+procedure TestTWebDriver.TestFindElementByLinkText;
 var
   ReturnValue: string;
   LinkText: string;
@@ -611,7 +626,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementByXPath;
+procedure TestTWebDriver.TestFindElementByXPath;
 var
   ReturnValue: string;
   XPath: string;
@@ -621,7 +636,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestGetCurrentWindowHandle;
+procedure TestTWebDriver.TestGetCurrentWindowHandle;
 var
   ReturnValue: string;
 begin
@@ -629,7 +644,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestGetElementAttribute;
+procedure TestTWebDriver.TestGetElementAttribute;
 var
   ReturnValue: string;
   attributename: string;
@@ -640,7 +655,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestSave_screenshot;
+procedure TestTWebDriver.TestSave_screenshot;
 var
   FileName: string;
 begin
@@ -649,7 +664,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestSet_Window_Size;
+procedure TestTWebDriver.TestSet_Window_Size;
 var
   WindowHandle: string;
   Height: integer;
@@ -660,7 +675,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestElementClick;
+procedure TestTWebDriver.TestElementClick;
 var
   Element: string;
 begin
@@ -669,7 +684,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestElement_Location;
+procedure TestTWebDriver.TestElement_Location;
 var
   ReturnValue: string;
   Element: string;
@@ -679,7 +694,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestElement_ScreenShort;
+procedure TestTWebDriver.TestElement_ScreenShort;
 var
   FileName: string;
   Element: string;
@@ -689,7 +704,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestElement_Size;
+procedure TestTWebDriver.TestElement_Size;
 var
   ReturnValue: string;
   Element: string;
@@ -699,7 +714,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementsByXPath;
+procedure TestTWebDriver.TestFindElementsByXPath;
 var
   ReturnValue: string;
   XPath: string;
@@ -709,7 +724,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementsByTag;
+procedure TestTWebDriver.TestFindElementsByTag;
 var
   ReturnValue: string;
   TagName: string;
@@ -719,7 +734,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementsByLinkText;
+procedure TestTWebDriver.TestFindElementsByLinkText;
 var
   ReturnValue: string;
   LinkText: string;
@@ -729,7 +744,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementsByID;
+procedure TestTWebDriver.TestFindElementsByID;
 var
   ReturnValue: string;
   ID: string;
@@ -739,7 +754,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestFindElementsByClassName;
+procedure TestTWebDriver.TestFindElementsByClassName;
 var
   ReturnValue: string;
   ClasName: string;
@@ -749,7 +764,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestGetAllSession;
+procedure TestTWebDriver.TestGetAllSession;
 var
   ReturnValue: string;
 begin
@@ -757,7 +772,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestGet_AllCookies;
+procedure TestTWebDriver.TestGet_AllCookies;
 var
   ReturnValue: string;
 begin
@@ -765,7 +780,7 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestImplicitly_Wait;
+procedure TestTWebDriver.TestImplicitly_Wait;
 var
   waitTime: Double;
 begin
@@ -774,13 +789,13 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestQuit;
+procedure TestTWebDriver.TestQuit;
 begin
   FWD.Quit;
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestRefresh;
+procedure TestTWebDriver.TestRefresh;
 var
   ParamSessionID: string;
 begin
@@ -789,19 +804,19 @@ begin
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestTerminatePhantomjs;
+procedure TestTWebDriver.TestTerminatePhantomjs;
 begin
   FWD.TerminateWebDriver;
   // TODO: Validate method results
 end;
 
-procedure TestTPhantomjs.TestClearAll;
+procedure TestTWebDriver.TestClearAll;
 begin
   FWD.Clear;
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
 end;
 
-procedure TestTPhantomjs.TestItJuzi;
+procedure TestTWebDriver.TestItJuzi;
 var
   Element :string;
   html:string;
@@ -832,6 +847,11 @@ begin
   FWD.ElementClick(Element);
 
   FWD.Save_screenshot('e:\temp\test.png');
+end;
+
+procedure TestTWebDriver.TestStartIEDriver;
+begin
+
 end;
 
 function TestTBrowserCMD.NewSession: string;
@@ -909,11 +929,61 @@ begin
   // TODO: Validate method results
 end;
 
+procedure TestTIEDriver.SetUp;
+begin
+  FCMD :=TDelphiCommand.Create(nil);
+end;
+
+procedure TestTIEDriver.TearDown;
+begin
+  if Assigned(FCMD) then
+    FreeAndNil(FCMD);
+
+end;
+
+procedure TestTIEDriver.TestStartIEDriver;
+var
+  IE:TIEDriver;
+begin
+  IE :=TIEDriver.Create(nil);
+  Try
+    ie.Port :=3533;
+    IE.StartDriver('..\..\..\WebDriver\IeDriverServer_x86.exe');
+    IE.NewSession();
+  Finally
+    FreeAndNil(IE);
+  End;
+end;
+
+procedure TestFirefoxDriver.SetUp;
+begin
+  FWD :=TFireFoxDriver.Create(nil);
+  FCMD :=TDelphiCommand.Create(nil);
+end;
+
+procedure TestFirefoxDriver.TearDown;
+begin
+  if Assigned(FCMD) then
+    FreeAndNil(FCMD);
+  FreeAndNil(FWD);
+end;
+
+procedure TestFirefoxDriver.TestStartFirefoxDriver;
+
+begin
+  FWD.Port :=4444;
+  FWD.StartDriver('..\..\..\WebDriver\geckodriver_x86.exe');
+  FWD.NewSession('C:\Program Files\Mozilla Firefox\firefox.exe');
+
+end;
+
 initialization
 
 // Register any test cases with the test runner
-RegisterTest(TestTPhantomjs.Suite);
+RegisterTest(TestTWebDriver.Suite);
 RegisterTest(TestTBrowserCMD.Suite);
+RegisterTest(TestTIEDriver.Suite);
+RegisterTest(TestFirefoxDriver.Suite);
 
 
 end.
