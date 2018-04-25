@@ -59,16 +59,17 @@ object TWebDriverService: TTWebDriverService
   object rgBrowserType: TRadioGroup
     Left = 32
     Top = 56
-    Width = 513
+    Width = 601
     Height = 105
     Caption = 'BrowserType'
-    Columns = 4
+    Columns = 5
     ItemIndex = 0
     Items.Strings = (
       'Ie driver'
       'firefox driver'
       'chrome driver'
-      'phantomjs driver')
+      'phantomjs driver'
+      'edge driver')
     TabOrder = 4
   end
   object Button4: TButton

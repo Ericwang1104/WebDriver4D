@@ -98,6 +98,12 @@ begin
       FWd.Cmd :=FCMd;
       fwd.StartDriver('..\..\..\WebDriver\phantomjs.exe');
     end;
+    4: //Edge
+    begin
+      FWd :=TEdgeDriver.Create(nil);
+      FWd.Cmd :=FCMd;
+      Fwd.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
+    end;
 
   end;
 end;

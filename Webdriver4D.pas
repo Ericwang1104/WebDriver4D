@@ -143,6 +143,14 @@ type
     procedure StartDriver(const ExeName: string; const Args: string = ''); override;
   end;
 
+  TEdgeDriver = class(TWebDriver)
+  strict protected
+    function BuildParams: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    function NewSession: string; override;
+  end;
+
 implementation
 
 uses
@@ -1236,6 +1244,61 @@ begin
     NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
   begin
 
+  end;
+end;
+
+constructor TEdgeDriver.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort :=7777;
+  FAddress :='localhost';
+end;
+
+function TEdgeDriver.BuildParams: string;
+begin
+
+   result :=' --port='+IntToStr(FPort);
+end;
+
+function TEdgeDriver.NewSession: string;
+const
+  Edge_Param =
+    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "MicrosoftEdge",'+
+    ' "platformName": "windows"}}, "desiredCapabilities": {"browserName": "MicrosoftEdge",'+
+    ' "version": "", "platform": "WINDOWS"}}';
+var
+  command: string;
+  Resp: string;
+
+begin
+  result := '';
+  command := Host + '/session';
+  Resp := FCmd.ExecutePost(command, Edge_Param);
+  if Resp <> '' then
+  begin
+    FJson.FromJSON(Resp);
+    if not FJson.Contains('sessionId') then
+      FJson.FromJSON(FJson.O['value'].ToJSON());
+    FSessionID := FJson.S['sessionId'];
+    if FSessionID <> '' then
+    begin
+      result := FSessionID;
+      FHasError := false;
+      FErrorMessage := '';
+    end
+    else
+    begin
+      FHasError := True;
+      if FJson.Contains('message') then
+        FErrorMessage := FJson.S['message']
+      else
+        FErrorMessage := Resp;
+    end;
+  end
+  else
+  begin
+    FHasError := True;
+    FErrorMessage := 'time out';
   end;
 end;
 
