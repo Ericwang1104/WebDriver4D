@@ -118,6 +118,26 @@ type
     procedure TestStartFirefoxDriver;
   end;
 
+  TestChromeDriver = class(TTestCase)
+  private
+    FCMD: TDelphiCommand;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStartChromeDriver;
+  end;
+
+  TestEdgeDriver = class(TTestCase)
+  private
+    FCMD: TDelphiCommand;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
+  published
+    procedure TestStartEdgeDriver;
+  end;
+
 implementation
 
 uses
@@ -947,7 +967,7 @@ var
 begin
   IE :=TIEDriver.Create(nil);
   Try
-    ie.Port :=3533;
+    ie.Port :=5555;
     IE.StartDriver('..\..\..\WebDriver\IeDriverServer_x86.exe');
     IE.NewSession();
   Finally
@@ -972,9 +992,61 @@ procedure TestFirefoxDriver.TestStartFirefoxDriver;
 
 begin
   FWD.Port :=4444;
+  (FWD as TFireFoxDriver).BrowserFileName := 'C:\Program Files\Mozilla Firefox\firefox.exe';
   FWD.StartDriver('..\..\..\WebDriver\geckodriver_x86.exe');
-  FWD.NewSession('C:\Program Files\Mozilla Firefox\firefox.exe');
+  FWD.NewSession;
+end;
 
+procedure TestChromeDriver.SetUp;
+begin
+  FCMD :=TDelphiCommand.Create(nil);
+end;
+
+procedure TestChromeDriver.TearDown;
+begin
+  if Assigned(FCMD) then
+    FreeAndNil(FCMD);
+
+end;
+
+procedure TestChromeDriver.TestStartChromeDriver;
+var
+  Chrome:TChromeDriver;
+begin
+  Chrome :=TChromeDriver.Create(nil);
+  Try
+    Chrome.Port :=6666;
+    Chrome.StartDriver('..\..\..\WebDriver\ChromeDriver.exe');
+    Chrome.NewSession();
+  Finally
+    FreeAndNil(Chrome);
+  End;
+end;
+
+procedure TestEdgeDriver.SetUp;
+begin
+  FCMD :=TDelphiCommand.Create(nil);
+end;
+
+procedure TestEdgeDriver.TearDown;
+begin
+  if Assigned(FCMD) then
+    FreeAndNil(FCMD);
+
+end;
+
+procedure TestEdgeDriver.TestStartEdgeDriver;
+var
+  Edge:TEdgeDriver;
+begin
+  Edge :=TEdgeDriver.Create(nil);
+  Try
+    Edge.Port :=7777;
+    Edge.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
+    Edge.NewSession();
+  Finally
+    FreeAndNil(Edge);
+  End;
 end;
 
 initialization
@@ -984,6 +1056,8 @@ RegisterTest(TestTWebDriver.Suite);
 RegisterTest(TestTBrowserCMD.Suite);
 RegisterTest(TestTIEDriver.Suite);
 RegisterTest(TestFirefoxDriver.Suite);
+RegisterTest(TestChromeDriver.Suite);
+RegisterTest(TestEdgeDriver.Suite);
 
 
 end.
