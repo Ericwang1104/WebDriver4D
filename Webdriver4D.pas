@@ -8,8 +8,18 @@ uses
   JsonDataObjects, Winapi.ShlObj;
 
 type
+  TCommandType=(cGet,cPost,cDelete);
   TDriverType = (btPhantomjs, btIE, btFirefox, btChrome);
+  TElement=packed record
+    W3C:Boolean;
+    ElementData: string;
+    function GetElementID: string;
+    function GetElementName: string;
 
+  private
+  public
+  end;
+  TExecCommandEvent= procedure (response :string) of object;
   TWebDriver = class(TComponent)
   strict private
     procedure CutImage(const FileName: string; Pic: string;
@@ -17,9 +27,11 @@ type
   private
     FAddress: string;
     FCmd: TDriverCommand;
+    FCurrentElement: TElement;
     FErrorMessage: string;
     FHasError: Boolean;
     FJson: TJsonObject;
+    FOnResponse: TExecCommandEvent;
     FProcessInfo: TProcessInformation;
     FStartupInfo: TStartupInfo;
     function GetHost: string;
@@ -31,7 +43,10 @@ type
     FPath: string;
     FPort: integer;
     FSessionID: string;
+    FW3C: Boolean;
     function BuildParams: string; virtual;
+    function ExecuteCommand(const CommandType: TCommandType; const Command: string;
+        const Param: string = ''): string;
     function ProcResponse(const Resp: string): string;
   public
     constructor Create(AOwner: TComponent); override;
@@ -48,7 +63,7 @@ type
     function FindElementByID(const ID: string): string;
     function FindElementByTag(const TagName: string): string;
     function FindElementByClassName(const ClasName: string): string;
-    function FindElement(const usingName, KeyName: string): string;
+    function FindElement(usingName, KeyName: string): string;
     function FindElements(const usingName, KeyName: string): string;
     function FindElementByLinkText(const LinkText: string): string;
     function FindElementByXPath(XPath: string): string;
@@ -92,9 +107,11 @@ type
     property Port: integer read FPort write FPort;
     property Path: string read FPath write FPath;
     property SessionID: string read FSessionID write FSessionID;
+    property W3C: Boolean read FW3C;
   published
     procedure Clear;
     property Timeout: integer read GetTimeout write SetTimeout;
+    property OnResponse: TExecCommandEvent read FOnResponse write FOnResponse;
   end;
 
   TPhantomjs = class(TWebDriver)
@@ -165,6 +182,7 @@ begin
   FLogFile := '';
   FHasError := false;
   FErrorMessage := '';
+  FW3C :=False;
 {$IFDEF FPC}
 {$ELSE}
   FCmd := TDelphiCommand.Create(self);
@@ -211,7 +229,9 @@ begin
     command := Host + '/session/' + ParamSessionID + '/window'
   else
     command := Host + '/session/' + FSessionID + '/window';
-  FCmd.ExecuteDelete(command);
+
+  ExecuteCommand(cDelete,command);
+  //FCmd.ExecuteDelete(command);
 end;
 
 procedure TWebDriver.CutImage(const FileName: string; Pic: string;
@@ -270,7 +290,8 @@ begin
   begin
     command := Host + '/session/' + FSessionID;
   end;
-  FCmd.ExecuteDelete(command);
+  //FCmd.ExecuteDelete(command);
+  ExecuteCommand(cDelete,command);
 end;
 
 procedure TWebDriver.ElementClick(const Element: string);
@@ -280,13 +301,14 @@ var
   Data: string;
   Resp: string;
 begin
-  FJson.FromJSON(Element);
-  Ele := FJson.S['ELEMENT'];
+  //FJson.FromJSON(Element);
+  Ele :=Element;
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/click';
   // FJson.S['sessionid'] := FSessionID;
   FJson.S['id'] := Ele;
   Data := FJson.ToJSON(false);
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cpost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -300,7 +322,8 @@ begin
   FJson.FromJSON(Element);
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/location';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
 end;
 
@@ -314,7 +337,8 @@ begin
   FJson.FromJSON(Element);
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
 end;
 
@@ -330,7 +354,8 @@ begin
   FJson.S['script'] := Script;
   FJson.A['args'].FromJSON(Args);
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  resp :=Executecommand(cPost,Command,Data);
   result := ProcResponse(Resp);
 end;
 
@@ -349,20 +374,53 @@ begin
   result := FindElement('class name', ClassName);
 end;
 
-function TWebDriver.FindElement(const usingName, KeyName: string): string;
+function TWebDriver.FindElement(usingName, KeyName: string): string;
 var
   command: string;
   Data: string;
   Resp: string;
 begin
   command := Host + '/session/' + FSessionID + '/element';
+
+  if FW3C then
+  begin
+    if  SameText(usingName,'id') then
+    begin
+      usingName :='css selector';
+      KeyName :=format( '[id="%s" ]',[KeyName]);
+    end else
+    if SameText(usingName,'tag name') then
+    begin
+      usingName :='css selector';
+    end else
+    if SameText(usingName,'class name') then
+    begin
+      usingName :='css selector';
+      KeyName :=Format('.%s',[KeyName]) ;
+    end else
+    if SameText(usingName,'name') then
+    begin
+      usingName :='css selector';
+      KeyName :=Format('[name="%s"]',[KeyName]);
+
+    end;
+ end;
+
+
+
   FJson.Clear;
+  FJson.S['using'] := usingName;
   FJson.S['value'] := KeyName;
   // FJson.S['sessionid'] := FSessionID;
-  FJson.S['using'] := usingName;
+
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
-  result := ProcResponse(Resp);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
+  //result := ProcResponse(Resp);
+  FCurrentElement.W3C :=FW3C;
+  FCurrentElement.ElementData :=ProcResponse(Resp);
+  result :=FCurrentElement.GetElementID;
+
 end;
 
 function TWebDriver.FindElementByLinkText(const LinkText: string): string;
@@ -381,7 +439,8 @@ var
   Resp: string;
 begin
   command := Host + '/sessions';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   if Resp <> '' then
   begin
     result := ProcResponse(Resp);
@@ -398,7 +457,8 @@ var
   Resp: string;
 begin
   command := Host + '/session/' + FSessionID + '/window_handle';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
 end;
 
@@ -413,7 +473,8 @@ begin
   Ele := FJson.S['ELEMENT'];
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/attribute/'
     + attributename;
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
 end;
 
@@ -434,7 +495,8 @@ begin
   FJson.S['url'] := URL;
   FJson.S['sessionid'] := FSessionID;
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
   if not FHasError then
   begin
@@ -460,7 +522,8 @@ begin
   FJson.F['ms'] := waitTime;
   FJson.S['session'] := FSessionID;
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -486,7 +549,8 @@ begin
   FJson.Clear;
   FJson.S['sessionid'] := FSessionID;
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -543,7 +607,8 @@ var
   Pic: string;
 begin
   command := Host + '/session/' + FSessionID + '/screenshot';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   Pic := ProcResponse(Resp);
   if not FHasError then
   begin
@@ -567,7 +632,8 @@ begin
   { command := Host + '/session/' + FSessionID + '/' + Element +
     '/screenshot'; }
   command := Host + '/session/' + FSessionID + '/screenshot';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   FJson.FromJSON(Resp);
   if not FHasError then
   begin
@@ -622,7 +688,8 @@ begin
   FJson.S['sessionid'] := FSessionID;
   FJson.S['using'] := usingName;
   Data := FJson.ToJSON(false);
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   result := ProcResponse(Resp);
 end;
 
@@ -635,8 +702,7 @@ var
   KeyArr: string;
   I: integer;
 begin
-  FJson.FromJSON(Element);
-  Ele := FJson.S['ELEMENT'];
+  Ele :=Element;
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/value';
 
   FJson.Clear;
@@ -656,7 +722,8 @@ begin
   // FJson.S['sessionid'] := FSessionID;
   FJson.S['id'] := Ele;
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  REsp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -675,7 +742,8 @@ begin
   // FJson.S['sessionid'] := FSessionID;
   FJson.S['windowHandle'] := WindowHandle;
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  REsp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -716,7 +784,8 @@ var
   command: string;
 begin
   command := Host + '/session/' + FSessionID + '/cookie';
-  FCmd.ExecuteDelete(command);
+  //FCmd.ExecuteDelete(command);
+  ExecuteCommand(cDelete,command)
 end;
 
 procedure TWebDriver.DeleteCookie(const cookieName: string);
@@ -724,8 +793,10 @@ var
   command: string;
 begin
   command := Host + '/session/' + FSessionID + '/cookie' + '/' + cookieName;
-  FCmd.ExecuteDelete(command);
+  //FCmd.ExecuteDelete(command);
+  ExecuteCommand(cDelete,command);
 end;
+
 
 function TWebDriver.GetAllCookie: string;
 var
@@ -768,7 +839,8 @@ begin
   FJson.S['name'] := 'pageLoad';
   FJson.I['value'] := Timeout;
   Data := FJson.ToJSON(false);
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -785,8 +857,34 @@ begin
   ckJson.S['value'] := cookieValue;
   command := Host + '/session/' + FSessionID + '/cookie';
   Data := FJson.ToJSON(True);
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
+end;
+
+function TWebDriver.ExecuteCommand(const CommandType: TCommandType; const
+    Command: string; const Param: string = ''): string;
+begin
+  case commandtype of
+    cGet:
+    begin
+        result :=FCmd.ExecuteGet(Command);
+    end;
+    cPost:
+    begin
+      result :=FCmd.ExecutePost(Command,Param);
+    end;
+    cDelete:
+    begin
+      fcmd.ExecuteDelete(Command);
+    end;
+
+  end;
+  if Assigned(FOnResponse) then
+  begin
+    FOnResponse(Result);
+  end;
+
 end;
 
 function TWebDriver.FindElementByName(const Name: string): string;
@@ -802,7 +900,8 @@ begin
   if FSessionID <> '' then
   begin
     command := Host + '/session/' + FSessionID + '/source';
-    result := ProcResponse(FCmd.ExecuteGet(command));
+    //result := ProcResponse(FCmd.ExecuteGet(command));
+    result :=ProcResponse(ExecuteCommand(cGet,command));
   end;
 end;
 
@@ -812,7 +911,8 @@ var
   Resp: string;
 begin
   command := Host + '/session/' + FSessionID + '/cookie';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   if Resp <> '' then
     result := ProcResponse(Resp)
   else
@@ -830,7 +930,8 @@ var
 begin
   // 用标准接口返回是错误,故用此方法
   command := Host + '/session/' + FSessionID + '/cookie';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   if Resp <> '' then
     S := ProcResponse(Resp)
   else
@@ -859,7 +960,8 @@ var
   Resp: string;
 begin
   command := Host + '/session/' + FSessionID + '/url';
-  Resp := FCmd.ExecuteGet(command);
+  //Resp := FCmd.ExecuteGet(command);
+  Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
 end;
 
@@ -931,13 +1033,20 @@ var
   command: string;
   Data: string;
   Resp: string;
+  ElementID:string;
 begin
   command := Host + '/session/' + FSessionID + '/frame';
-  FJson.Clear;
-  FJson.S['id'] := FrameID;
-  FJson.S['sessionid'] := FSessionID;
-  Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+
+
+
+  ElementID :=FindElementByID(FrameID);
+  {FJson.Clear;
+  FJson.S['id'] := '{"ELEMENT":'+'"'+ElementID+'"'+','+  }
+  //'"'+FCurrentElement.GetElementName+'":'+'"'+ElementID+'"}';
+  //FJson.S['sessionid'] := FSessionID;
+  //Data := FJson.ToJSON();
+  Data :='{"id": {"ELEMENT": "'+ElementID+'", "'+FCurrentElement.GetElementName+'": "'+ElementID+'"}}';
+  Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
 end;
 
@@ -1004,7 +1113,8 @@ begin
   FJson.S['script'] := Script;
   FJson.A['args'].FromJSON(Args);
   Data := FJson.ToJSON();
-  Resp := FCmd.ExecutePost(command, Data);
+  //Resp := FCmd.ExecutePost(command, Data);
+  Resp :=ExecuteCommand(cPost,command,Data);
   result := ProcResponse(Resp);
 end;
 
@@ -1024,10 +1134,12 @@ var
 begin
   result := '';
   command := Host + '/session';
-  Resp := FCmd.ExecutePost(command, Phantomjs_PARAM);
+  //Resp := FCmd.ExecutePost(command, Phantomjs_PARAM);
+  Resp :=ExecuteCommand(cPost,command,Phantomjs_PARAM);
   if Resp <> '' then
   begin
     FJson.FromJSON(Resp);
+    FW3C :=not FJson.Contains('status');
     if not FJson.Contains('sessionId') then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
@@ -1084,10 +1196,12 @@ begin
   result := '';
   command := Host + '/session';
   JsStr := ReplaceStr(FBrowserFileName, '\', '\\');
-  Resp := FCmd.ExecutePost(command, Format(Firefox_Param, [JsStr, JsStr]));
+  //Resp := FCmd.ExecutePost(command, Format(Firefox_Param, [JsStr, JsStr]));
+  Resp :=ExecuteCommand(cPost,command,Format(Firefox_Param, [JsStr, JsStr]));
   if Resp <> '' then
   begin
     FJson.FromJSON(Resp);
+    FW3C :=not FJson.Contains('status');
     if not FJson.Contains('sessionId') then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
@@ -1136,10 +1250,12 @@ var
 begin
   result := '';
   command := Host + '/session';
-  Resp := FCmd.ExecutePost(command, IE_Param);
+  //Resp := FCmd.ExecutePost(command, IE_Param);
+  Resp :=ExecuteCommand(cPost,command,IE_Param);
   if Resp <> '' then
   begin
     FJson.FromJSON(Resp);
+    FW3C :=not FJson.Contains('status');
     if not FJson.Contains('sessionId') then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
@@ -1179,7 +1295,7 @@ end;
 
 function TChromeDriver.NewSession: string;
 const
-  Chorme_Param =
+  Chrome_Param =
     '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "chrome",'+
     ' "platformName": "any", "goog:chromeOptions": {"extensions": [], "args": []}}},'+
     ' "desiredCapabilities": {"browserName": "chrome", "version": "", "platform": "ANY",'+
@@ -1191,11 +1307,12 @@ var
 begin
   result := '';
   command := Host + '/session';
-  Resp := FCmd.ExecutePost(command, Chorme_Param);
-
+  //Resp := FCmd.ExecutePost(command, Chrome_Param);
+  Resp :=ExecuteCommand(cPost,command,Chrome_Param);
   if Resp <> '' then
   begin
     FJson.FromJSON(Resp);
+    FW3C :=not FJson.Contains('status');
     if not FJson.Contains('sessionId') then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
@@ -1273,10 +1390,12 @@ var
 begin
   result := '';
   command := Host + '/session';
-  Resp := FCmd.ExecutePost(command, Edge_Param);
+  //Resp := FCmd.ExecutePost(command, Edge_Param);
+  Resp :=ExecuteCommand(cPost,command,Edge_Param);
   if Resp <> '' then
   begin
     FJson.FromJSON(Resp);
+    FW3C :=not FJson.Contains('status');
     if not FJson.Contains('sessionId') then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
@@ -1299,6 +1418,42 @@ begin
   begin
     FHasError := True;
     FErrorMessage := 'time out';
+  end;
+end;
+
+function TElement.GetElementID: string;
+var
+  Json:TJsonObject;
+begin
+  if not W3C then
+    Result :=ElementData
+  else
+  begin
+    Json :=TJsonObject.Create;
+    try
+      Json.FromJSON(ElementData);
+      result :=Json.Items[0].Value;
+    finally
+      FreeAndNil(Json);
+    end;
+  end;
+end;
+
+function TElement.GetElementName: string;
+var
+  Json:TJsonObject;
+begin
+  if not W3C then
+    Result :=ElementData
+  else
+  begin
+    Json :=TJsonObject.Create;
+    try
+      Json.FromJSON(ElementData);
+      result :=Json.Names[0];
+    finally
+      FreeAndNil(Json);
+    end;
   end;
 end;
 

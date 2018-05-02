@@ -103,6 +103,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestMail163;
     procedure TestStartIEDriver;
   end;
 
@@ -115,6 +116,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestMail163;
     procedure TestStartFirefoxDriver;
   end;
 
@@ -135,7 +137,13 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestMail163;
     procedure TestStartEdgeDriver;
+  end;
+
+  TestPhantomjsDriver = class(TTestCase)
+  published
+    procedure TestMail163;
   end;
 
 implementation
@@ -191,8 +199,8 @@ procedure TestTWebDriver.SetUp;
 begin
 
   //StartFireFox;
-  StartIEDriver;
-  //StartPhantomjs;
+  //StartIEDriver;
+  StartPhantomjs;
 
   FCMD :=TDelphiCommand.Create(nil);
   FWD.Cmd :=FCMD;
@@ -201,6 +209,7 @@ end;
 
 procedure TestTWebDriver.StartChromeDriver;
 begin
+  FWD :=TChromeDriver.Create(nil);
   FWD.Port :=6666;
   FWD.StartDriver('..\..\..\WebDriver\ChromeDriver.exe');
 end;
@@ -213,7 +222,7 @@ end;
 
 procedure TestTWebDriver.StartPhantomjs;
 begin
-
+  FWD :=TPhantomjs.Create(nil);
   FWD.LogFile :='e:\temp\phantomjs_log.log';
   FWD.StartDriver('D:\webdriver\Phantomjs.exe');
 
@@ -889,7 +898,8 @@ var
 begin
   command := 'http://127.0.0.1:81/wd/hub/session';
 
-  resp := FCMD.ExecutePost(command, NEW_SESSION_PARAM);
+  //resp := FCMD.ExecutePost(command, NEW_SESSION_PARAM);
+
   FQJSON.Parse(PChar(resp));
   if FQJSON.S['status'] = '0' then
   begin
@@ -961,6 +971,39 @@ begin
 
 end;
 
+procedure TestTIEDriver.TestMail163;
+var
+  WD:TIEDriver;
+  Element:string;
+  Script:string;
+
+begin
+  WD := TIEDriver.Create(nil);
+  try
+    WD.Address := 'localhost';
+    //WD.Port := 7777;
+    WD.StartDriver('d:\webdriver\IeDriverServer_x86.exe');//路径正确
+    Sleep(500);
+    WD.NewSession;
+    WD.GetURL('http://mail.163.com');
+    WD.SwitchToFrame('x-URS-iframe');
+
+
+
+    Sleep(3000);
+    Element := WD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByID('dologin');
+    WD.ElementClick(Element);
+
+    WD.Clear;
+  finally
+    FreeAndNil(WD);
+  end;
+end;
+
 procedure TestTIEDriver.TestStartIEDriver;
 var
   IE:TIEDriver;
@@ -986,6 +1029,39 @@ begin
   if Assigned(FCMD) then
     FreeAndNil(FCMD);
   FreeAndNil(FWD);
+end;
+
+procedure TestFirefoxDriver.TestMail163;
+var
+  WD:TFireFoxDriver;
+  Element:string;
+  Script:string;
+
+begin
+  WD := TFireFoxDriver.Create(nil);
+  try
+    WD.Address := 'localhost';
+    //WD.Port := 7777;
+    WD.StartDriver('d:\webdriver\geckodriver_x86.exe');//路径正确
+    WD.BrowserFileName :='C:\Program Files\Mozilla Firefox\firefox.exe';
+    Sleep(500);
+    WD.NewSession;
+    WD.GetURL('http://mail.163.com');
+    WD.SwitchToFrame('x-URS-iframe');
+
+
+
+    Sleep(10000);
+    Element :=WD.FindElementByName('email');
+    Element := WD.FindElementByXPath('//input[@name="email" and @class="j-inputtext dlemail"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByID('dologin');
+    WD.ElementClick(Element);
+  finally
+    FreeAndNil(WD);
+  end;
 end;
 
 procedure TestFirefoxDriver.TestStartFirefoxDriver;
@@ -1035,6 +1111,37 @@ begin
 
 end;
 
+procedure TestEdgeDriver.TestMail163;
+var
+  WD:TEdgeDriver;
+  Element:string;
+  Script:string;
+
+begin
+  WD := TEdgeDriver.Create(nil);
+  try
+    WD.Address := 'localhost';
+    //WD.Port := 7777;
+    WD.StartDriver('d:\webdriver\MicrosoftWebDriver.exe');//路径正确
+    WD.Path :='';
+    Sleep(500);
+    WD.NewSession;
+    WD.GetURL('https://mail.163.com');
+    WD.SwitchToFrame('x-URS-iframe');
+
+
+    Sleep(3000);
+    Element := WD.FindElementByXPath('//input[@name="email" and @class="j-inputtext dlemail"');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByID('dologin');
+    WD.ElementClick(Element);
+  finally
+    FreeAndNil(WD);
+  end;
+end;
+
 procedure TestEdgeDriver.TestStartEdgeDriver;
 var
   Edge:TEdgeDriver;
@@ -1049,6 +1156,34 @@ begin
   End;
 end;
 
+procedure TestPhantomjsDriver.TestMail163;
+var
+  WD:TPhantomjs;
+  Element:string;
+begin
+  WD := TPhantomjs.Create(nil);
+  try
+    WD.Address := '127.0.0.1';
+    WD.Port := 8888;
+    WD.LogFile := 'ie_log.log';
+    WD.StartDriver('d:\webdriver\phantomjs.exe');//路径正确
+    WD.Path :='';
+    Sleep(500);
+    WD.NewSession;
+    WD.GetURL('https://mail.163.com');
+    //WD.FindElementByID(')
+    Sleep(3000);
+    Element := WD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
+    WD.SendKey(Element, 'demo');
+    Element := WD.FindElementByID('dologin');
+    WD.ElementClick(Element);
+  finally
+    FreeAndNil(WD);
+  end;
+end;
+
 initialization
 
 // Register any test cases with the test runner
@@ -1058,6 +1193,6 @@ RegisterTest(TestTIEDriver.Suite);
 RegisterTest(TestFirefoxDriver.Suite);
 RegisterTest(TestChromeDriver.Suite);
 RegisterTest(TestEdgeDriver.Suite);
-
+RegisterTest(TestPhantomjsDriver.Suite);
 
 end.
