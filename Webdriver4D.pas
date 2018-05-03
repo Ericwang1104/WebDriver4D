@@ -469,8 +469,9 @@ var
   Ele: string;
   Resp: string;
 begin
-  FJson.FromJSON(Pchar(Element));
-  Ele := FJson.S['ELEMENT'];
+  //FJson.FromJSON(Pchar(Element));
+  //Ele := FJson.S['ELEMENT'];
+  Ele :=Element;
   command := Host + '/session/' + FSessionID + '/element/' + Ele + '/attribute/'
     + attributename;
   //Resp := FCmd.ExecuteGet(command);
@@ -1425,17 +1426,21 @@ function TElement.GetElementID: string;
 var
   Json:TJsonObject;
 begin
-  if not W3C then
-    Result :=ElementData
-  else
-  begin
-    Json :=TJsonObject.Create;
-    try
-      Json.FromJSON(ElementData);
+  Json :=TJsonObject.Create;
+  try
+    Json.FromJSON(ElementData);
+    if not W3C then
+    begin
+      Result :=Json.S['ELEMENT'];
+    end
+    else
+    begin
+
       result :=Json.Items[0].Value;
-    finally
-      FreeAndNil(Json);
+
     end;
+  finally
+    FreeAndNil(Json);
   end;
 end;
 

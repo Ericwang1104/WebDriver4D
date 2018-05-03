@@ -20,19 +20,17 @@ type
 
   TestTWebDriver = class(TTestCase)
   strict private
-    FWD: TWebDriver;
     procedure StartIEDriver;
     procedure LoginWeibo;
     procedure StartChromeDriver;
     procedure StartFireFox;
     procedure StartPhantomjs;
   private
+  strict protected
     FCMD: TDelphiCommand;
-
+    FWD: TWebDriver;
   public
     procedure CheckHasError;
-    procedure SetUp; override;
-    procedure TearDown; override;
     procedure TestCloseWindow;
     procedure TestFindElementByID;
     procedure TestFindElementByTag;
@@ -68,13 +66,13 @@ type
     procedure TestExecuteScript;
     procedure TestGetAllCookies;
     procedure TestGetURL;
-    procedure TestInit;
     procedure TestNewSession;
     procedure TestScreenShot;
     procedure TestGetElement;
     procedure TestGetElements;
     procedure TestItJuzi;
     procedure TestLoginWeibo;
+    procedure TestMail163;
     procedure TestSaveElementScreen;
     procedure TestSendKey;
     procedure TestSetWindowSize;
@@ -96,15 +94,14 @@ type
     procedure TestExecutePost;
   end;
 
-  TestTIEDriver = class(TTestCase)
+  TestTIEDriver = class(TestTWebDriver)
+  strict private
+    procedure StartIEDriver;
   private
-    FCMD: TDelphiCommand;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestMail163;
-    procedure TestStartIEDriver;
   end;
 
 type
@@ -141,9 +138,13 @@ type
     procedure TestStartEdgeDriver;
   end;
 
-  TestPhantomjsDriver = class(TTestCase)
+  TestPhantomjsDriver = class(TestTWebDriver)
+  strict private
+    procedure StartPhantomjs;
+  public
+    procedure SetUp; override;
+    procedure TearDown; override;
   published
-    procedure TestMail163;
   end;
 
 implementation
@@ -195,18 +196,6 @@ begin
 
 end;
 
-procedure TestTWebDriver.SetUp;
-begin
-
-  //StartFireFox;
-  //StartIEDriver;
-  StartPhantomjs;
-
-  FCMD :=TDelphiCommand.Create(nil);
-  FWD.Cmd :=FCMD;
-  //TestInit
-end;
-
 procedure TestTWebDriver.StartChromeDriver;
 begin
   FWD :=TChromeDriver.Create(nil);
@@ -224,15 +213,8 @@ procedure TestTWebDriver.StartPhantomjs;
 begin
   FWD :=TPhantomjs.Create(nil);
   FWD.LogFile :='e:\temp\phantomjs_log.log';
+  FWD.Address :='127.0.0.1';
   FWD.StartDriver('D:\webdriver\Phantomjs.exe');
-
-end;
-
-procedure TestTWebDriver.TearDown;
-begin
-  if Assigned(FCMD) then
-    FreeAndNil(FCMD);
-  FreeAndnil(FWD);
 
 end;
 
@@ -243,7 +225,7 @@ var
   Session: string;
   I: integer;
 begin
-  TestInit;
+
   AllSession := FWD.GetAllSession;
   Json := TJsonArray.Create;
   try
@@ -270,7 +252,7 @@ procedure TestTWebDriver.TestExecuteScript;
 var
   xxx: string;
 begin
-  TestInit;
+
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.Implicitly_Wait(3000);
@@ -290,7 +272,7 @@ var
   lst: TStringList;
   state: string;
 begin
-  TestInit;
+
   Sleep(500);
 
   FWD.NewSession;
@@ -340,19 +322,6 @@ begin
   FWD.GetURL('http://m.weibo.cn');
 end;
 
-procedure TestTWebDriver.TestInit;
-var
-  ExeName: string;
-  CookieFiles: string;
-  Ph:TPhantomjs;
-begin
-  Ph :=TPhantomjs.Create(nil);
-  FWd :=Ph;
-  FWD.Address := '127.0.0.1';
-  FWD.Port :=8080;
-  Ph.StartDriver('..\..\..\WebDriver\Phantomjs.exe');
-end;
-
 procedure TestTWebDriver.TestNewSession;
 begin
 
@@ -367,7 +336,6 @@ var
   Count: integer;
 begin
 
-  TestInit;
   Sleep(500);
   FWD.NewSession;
   FWD.Set_Window_Size(1920, 1080);
@@ -421,7 +389,6 @@ procedure TestTWebDriver.TestGetElement;
 var
   Element: string;
 begin
-  TestInit;
   Sleep(500);
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
@@ -439,7 +406,6 @@ var
   Item: TJsonObject;
   Element: string;
 begin
-  TestInit;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.GetURL('http://www.weibo.com');
@@ -484,7 +450,6 @@ var
   enabled: string;
   SessionID: string;
 begin
-  TestInit;
   Sleep(500);
 
   FWD.TimeOut := 120 * 1000;
@@ -532,7 +497,6 @@ procedure TestTWebDriver.TestSaveElementScreen;
 var
   Element: string;
 begin
-  TestInit;
   Sleep(500);
 
   FWD.NewSession;
@@ -552,7 +516,6 @@ procedure TestTWebDriver.TestSendKey;
 var
   Element: string;
 begin
-  TestInit;
   Sleep(500);
 
   FWD.NewSession;
@@ -578,7 +541,6 @@ end;
 
 procedure TestTWebDriver.TestSetWindowSize;
 begin
-  TestInit;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
 end;
@@ -878,6 +840,27 @@ begin
   FWD.Save_screenshot('e:\temp\test.png');
 end;
 
+procedure TestTWebDriver.TestMail163;
+var
+  Element:string;
+begin
+
+    //FWD.Port := 7777;
+    Sleep(500);
+    FWD.GetURL('http://mail.163.com');
+    FWD.SwitchToFrame('x-URS-iframe');
+
+    Sleep(3000);
+    Element := FWD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
+    FWD.SendKey(Element, 'demo');
+    Element := FWD.FindElementByXPath('//input[@name="password" and @type="password"]');
+    FWD.SendKey(Element, 'demo');
+    Element := FWD.FindElementByID('dologin');
+    FWD.ElementClick(Element);
+    FWD.Clear;
+
+end;
+
 procedure TestTWebDriver.TestStartIEDriver;
 begin
 
@@ -962,60 +945,28 @@ end;
 procedure TestTIEDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
+  StartIEDriver;
+  FWD.Cmd :=FCMD;
 end;
 
 procedure TestTIEDriver.TearDown;
 begin
+  FWD.clear;
+  if Assigned(FWD) then
+    FreeAndNil(FWD);
   if Assigned(FCMD) then
-    FreeAndNil(FCMD);
+    FreeAndNil(fCMD);
 
 end;
 
-procedure TestTIEDriver.TestMail163;
-var
-  WD:TIEDriver;
-  Element:string;
-  Script:string;
+procedure TestTIEDriver.StartIEDriver;
 
 begin
-  WD := TIEDriver.Create(nil);
-  try
-    WD.Address := 'localhost';
-    //WD.Port := 7777;
-    WD.StartDriver('d:\webdriver\IeDriverServer_x86.exe');//路径正确
-    Sleep(500);
-    WD.NewSession;
-    WD.GetURL('http://mail.163.com');
-    WD.SwitchToFrame('x-URS-iframe');
+  FWD :=TIEDriver.Create(nil);
+  FWD.Port :=5555;
+  FWD.StartDriver('..\..\..\WebDriver\IeDriverServer_x86.exe');
+  FWD.NewSession();
 
-
-
-    Sleep(3000);
-    Element := WD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByID('dologin');
-    WD.ElementClick(Element);
-
-    WD.Clear;
-  finally
-    FreeAndNil(WD);
-  end;
-end;
-
-procedure TestTIEDriver.TestStartIEDriver;
-var
-  IE:TIEDriver;
-begin
-  IE :=TIEDriver.Create(nil);
-  Try
-    ie.Port :=5555;
-    IE.StartDriver('..\..\..\WebDriver\IeDriverServer_x86.exe');
-    IE.NewSession();
-  Finally
-    FreeAndNil(IE);
-  End;
 end;
 
 procedure TestFirefoxDriver.SetUp;
@@ -1156,32 +1107,31 @@ begin
   End;
 end;
 
-procedure TestPhantomjsDriver.TestMail163;
-var
-  WD:TPhantomjs;
-  Element:string;
+procedure TestPhantomjsDriver.SetUp;
 begin
-  WD := TPhantomjs.Create(nil);
-  try
-    WD.Address := '127.0.0.1';
-    WD.Port := 8888;
-    WD.LogFile := 'ie_log.log';
-    WD.StartDriver('d:\webdriver\phantomjs.exe');//路径正确
-    WD.Path :='';
-    Sleep(500);
-    WD.NewSession;
-    WD.GetURL('https://mail.163.com');
-    //WD.FindElementByID(')
-    Sleep(3000);
-    Element := WD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByID('dologin');
-    WD.ElementClick(Element);
-  finally
-    FreeAndNil(WD);
-  end;
+  FCMD :=TDelphiCommand.Create(nil);
+  StartPhantomjs;
+  FWD.Cmd :=FCMD;
+end;
+
+procedure TestPhantomjsDriver.StartPhantomjs;
+
+begin
+  FWD :=TPhantomjs.Create(nil);
+  FWD.Port :=8888;
+  FWD.StartDriver('..\..\..\WebDriver\Phantomjs.exe');
+  FWD.NewSession();
+
+end;
+
+procedure TestPhantomjsDriver.TearDown;
+begin
+  FWD.clear;
+  if Assigned(FWD) then
+    FreeAndNil(FWD);
+  if Assigned(FCMD) then
+    FreeAndNil(fCMD);
+
 end;
 
 initialization
