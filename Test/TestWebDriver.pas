@@ -70,7 +70,6 @@ type
     procedure TestScreenShot;
     procedure TestGetElement;
     procedure TestGetElements;
-    procedure TestItJuzi;
     procedure TestLoginWeibo;
     procedure TestMail163;
     procedure TestSaveElementScreen;
@@ -807,49 +806,14 @@ begin
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
 end;
 
-procedure TestTWebDriver.TestItJuzi;
-var
-  Element :string;
-  html:string;
-  stream:TStringStream;
-begin
-  //FWD.Clear;
-  FWD.NewSession;
-  FWD.Set_Window_Size(1920,1080);
-  FWD.Implicitly_Wait(5);
-  FWD.GetURL('https://www.itjuzi.com/user/login?flag=radar&redirect=/investevent');
-
-  // input username
-  html :=FWd.GetDocument;
-  //html :=fwd.ExecuteScript('return document.body.InnerHTML' );
-  stream :=TStringStream.Create('',TEncoding.UTF8);
-  try
-    stream.WriteString(html);
-    stream.SaveToFile('e:\temp\test.html');
-  finally
-    FreeAndNil(stream);
-  end;
-  Element :=FWD.findElementByID('create_account_email');
-  FWD.SendKey(Element,'wac@yeah.net');
-  //input password
-  Element :=FWD.FindElementByID('create_account_password');
-  FWD.SendKey(Element,'123456');
-  Element :=FWD.FindElementByID('login_btn');
-  FWD.ElementClick(Element);
-
-  FWD.Save_screenshot('e:\temp\test.png');
-end;
-
 procedure TestTWebDriver.TestMail163;
 var
   Element:string;
 begin
-
     //FWD.Port := 7777;
     Sleep(500);
     FWD.GetURL('http://mail.163.com');
     FWD.SwitchToFrame('x-URS-iframe');
-
     Sleep(3000);
     Element := FWD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
     FWD.SendKey(Element, 'demo');
