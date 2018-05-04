@@ -54,7 +54,6 @@ type
     procedure TestFindElementsByClassName;
     procedure TestGetAllSession;
     procedure TestGet_AllCookies;
-    procedure TestImplicitly_Wait;
     procedure TestQuit;
     procedure TestRefresh;
     procedure TestTerminatePhantomjs;
@@ -70,6 +69,7 @@ type
     procedure TestScreenShot;
     procedure TestGetElement;
     procedure TestGetElements;
+    procedure TestImplicitly_Wait;
     procedure TestLoginWeibo;
     procedure TestMail163;
     procedure TestSaveElementScreen;
@@ -104,19 +104,17 @@ type
   end;
 
 type
-  TestFirefoxDriver = class(TTestCase)
+  TestFirefoxDriver = class(TestTWebDriver)
+  strict private
+    procedure StartFireFox;
   private
-    FCMD: TDelphiCommand;
-    FWD: TWebDriver;
   public
     procedure SetUp; override;
     procedure TearDown; override;
   published
-    procedure TestMail163;
-    procedure TestStartFirefoxDriver;
   end;
 
-  TestChromeDriver = class(TTestCase)
+  TestChromeDriver = class(TestTWebDriver)
   private
     FCMD: TDelphiCommand;
   public
@@ -126,7 +124,7 @@ type
     procedure TestStartChromeDriver;
   end;
 
-  TestEdgeDriver = class(TTestCase)
+  TestEdgeDriver = class(TestTWebDriver)
   private
     FCMD: TDelphiCommand;
   public
@@ -251,7 +249,7 @@ procedure TestTWebDriver.TestExecuteScript;
 var
   xxx: string;
 begin
-
+  FWD.Clear;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.Implicitly_Wait(3000);
@@ -274,7 +272,7 @@ begin
 
   Sleep(500);
 
-  FWD.NewSession;
+  //FWD.NewSession;
 
   // FWD.Set_Window_Size(1366, 768);
 
@@ -315,7 +313,7 @@ end;
 
 procedure TestTWebDriver.TestGetURL;
 begin
-
+  FWD.Clear;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.GetURL('http://m.weibo.cn');
@@ -323,7 +321,7 @@ end;
 
 procedure TestTWebDriver.TestNewSession;
 begin
-
+  FWD.Clear;
   FWD.NewSession;
 end;
 
@@ -336,11 +334,11 @@ var
 begin
 
   Sleep(500);
-  FWD.NewSession;
+  //FWD.NewSession;
   FWD.Set_Window_Size(1920, 1080);
   FWD.GetURL('https://passport.weibo.cn/signin/login?entry=mweibo');
   Sleep(3000);
-  FWD.Save_screenshot('e:\temp\test.png');
+
   Ele := FWD.FindElementsByXPath
     ('//div[@class="card card9 line-around" and @data-act-type="hover"]');
   FWD.Implicitly_Wait(3000);
@@ -351,36 +349,7 @@ begin
   Ele := FWD.FindElementByID('loginAction');
   FWD.ElementClick(Ele);
 
-  Json := TJsonObject.Create;
-  Count := 0;
-  try
-
-    Ele := '';
-    while Count < 100 do
-    begin
-      // try
-      Ele := FWD.FindElementsByXPath
-        ('//div[@class="card card9 line-around" and @data-act-type="hover"]');
-      Json.Parse(Ele);
-      Count := Json.Count;
-      Sleep(1000);
-      FWD.ExecuteScript
-        ('document.body.scrollTop = document.body.scrollHeight;');
-      // except
-
-      // end;
-    end;
-    Sleep(300);
-    // Ele :=FWD.FindElementByXPath('//input[@id="loginnamea"]');
-    if Ele <> '' then
-    begin
-
-      FWD.Save_screenshot('e:\temp\test.png');
-      FWD.CloseWindow;
-    end;
-  finally
-    FreeAndnil(Json);
-  end;
+  FWD.Save_screenshot('..\..\test.png');
 
 end;
 
@@ -389,6 +358,7 @@ var
   Element: string;
 begin
   Sleep(500);
+  FWD.Clear;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.GetURL('https://passport.weibo.cn/signin/login?entry=mweibo');
@@ -405,6 +375,7 @@ var
   Item: TJsonObject;
   Element: string;
 begin
+  FWD.Clear;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
   FWD.GetURL('http://www.weibo.com');
@@ -452,6 +423,7 @@ begin
   Sleep(500);
 
   FWD.TimeOut := 120 * 1000;
+  FWD.Clear;
   SessionID := FWD.NewSession;
   FWD.PageLoadTimeout(90 * 1000);
   CheckHasError;
@@ -497,7 +469,7 @@ var
   Element: string;
 begin
   Sleep(500);
-
+  FWD.Clear;
   FWD.NewSession;
 
   FWD.Set_Window_Size(1366, 768);
@@ -507,7 +479,7 @@ begin
   Sleep(5000);
   FWD.Implicitly_Wait(3000);
 
-  Element := FWD.FindElementByXPath('//div[@class="W_unlogin_v2"]');
+  Element := FWD.FindElementByXPath('//div[@class="W_unlogin_v4"]');
   FWD.Element_ScreenShort(Element, 'e:\temp\login.png');
 end;
 
@@ -516,7 +488,7 @@ var
   Element: string;
 begin
   Sleep(500);
-
+  FWD.Clear;
   FWD.NewSession;
 
 
@@ -540,6 +512,7 @@ end;
 
 procedure TestTWebDriver.TestSetWindowSize;
 begin
+  FWD.Clear;
   FWD.NewSession;
   FWD.Set_Window_Size(1366, 768);
 end;
@@ -775,7 +748,8 @@ var
   waitTime: Double;
 begin
   // TODO: Setup method call parameters
-  FWD.Implicitly_Wait(waitTime);
+  FWD.Implicitly_Wait(1000);
+  FWD.GetURL('http://www.microsoft.com/');
   // TODO: Validate method results
 end;
 
@@ -937,49 +911,20 @@ procedure TestFirefoxDriver.SetUp;
 begin
   FWD :=TFireFoxDriver.Create(nil);
   FCMD :=TDelphiCommand.Create(nil);
+  StartFireFox;
+  FWD.Cmd :=FCMD;
 end;
 
 procedure TestFirefoxDriver.TearDown;
 begin
+  FWD.Clear;
   if Assigned(FCMD) then
     FreeAndNil(FCMD);
-  FreeAndNil(FWD);
+  if Assigned(FWD) then
+    FreeAndNil(FWD);
 end;
 
-procedure TestFirefoxDriver.TestMail163;
-var
-  WD:TFireFoxDriver;
-  Element:string;
-  Script:string;
-
-begin
-  WD := TFireFoxDriver.Create(nil);
-  try
-    WD.Address := 'localhost';
-    //WD.Port := 7777;
-    WD.StartDriver('d:\webdriver\geckodriver_x86.exe');//Â·¾¶ÕýÈ·
-    WD.BrowserFileName :='C:\Program Files\Mozilla Firefox\firefox.exe';
-    Sleep(500);
-    WD.NewSession;
-    WD.GetURL('http://mail.163.com');
-    WD.SwitchToFrame('x-URS-iframe');
-
-
-
-    Sleep(10000);
-    Element :=WD.FindElementByName('email');
-    Element := WD.FindElementByXPath('//input[@name="email" and @class="j-inputtext dlemail"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
-    WD.SendKey(Element, 'demo');
-    Element := WD.FindElementByID('dologin');
-    WD.ElementClick(Element);
-  finally
-    FreeAndNil(WD);
-  end;
-end;
-
-procedure TestFirefoxDriver.TestStartFirefoxDriver;
+procedure TestFirefoxDriver.StartFireFox;
 
 begin
   FWD.Port :=4444;
@@ -1101,7 +1046,6 @@ end;
 initialization
 
 // Register any test cases with the test runner
-RegisterTest(TestTWebDriver.Suite);
 RegisterTest(TestTBrowserCMD.Suite);
 RegisterTest(TestTIEDriver.Suite);
 RegisterTest(TestFirefoxDriver.Suite);
