@@ -29,12 +29,12 @@ type
     FCmd: TDriverCommand;
     FCurrentElement: TElement;
     FErrorMessage: string;
-    FHasError: Boolean;
     FJson: TJsonObject;
     FOnResponse: TExecCommandEvent;
     FPopup_Error: Boolean;
     FProcessInfo: TProcessInformation;
     FStartupInfo: TStartupInfo;
+    function GetHasError: Boolean;
     function GetHost: string;
     function GetTimeout: integer;
     procedure SaveScreenToFileName(const FileName, Base64File: string);
@@ -100,7 +100,7 @@ type
     procedure SwitchToFrame(const FrameID: string);
     procedure TerminateWebDriver;
     property ErrorMessage: string read FErrorMessage;
-    property HasError: Boolean read FHasError;
+    property HasError: Boolean read GetHasError;
     property LogFile: string read FLogFile write FLogFile;
     property Host: string read GetHost;
     property Address: string read FAddress write FAddress;
@@ -182,7 +182,7 @@ begin
   FillChar(FProcessInfo, SizeOf(FProcessInfo), 0);
   FAddress := '127.0.0.1';
   FLogFile := '';
-  FHasError := false;
+
   FErrorMessage := '';
   FW3C :=False;
   FPopup_Error :=True;
@@ -510,7 +510,7 @@ begin
   //Resp := FCmd.ExecutePost(command, Data);
   Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
-  if not FHasError then
+  if not HasError then
   begin
     I := 0;
     while I < Timeout do
@@ -630,7 +630,7 @@ begin
   //Resp := FCmd.ExecuteGet(command);
   Resp :=ExecuteCommand(cGet,command);
   Pic := ProcResponse(Resp);
-  if not FHasError then
+  if not HasError then
   begin
     SaveScreenToFileName(FileName, Pic);
   end;
@@ -657,7 +657,7 @@ begin
   //Resp := FCmd.ExecuteGet(command);
   Resp :=ExecuteCommand(cGet,command);
   FJson.FromJSON(Resp);
-  if not FHasError then
+  if not HasError then
   begin
     Pic := FJson.S['value'];
     Loc := Element_Location(Element);
@@ -999,6 +999,11 @@ begin
   result := ProcResponse(Resp);
 end;
 
+function TWebDriver.GetHasError: Boolean;
+begin
+  result := FErrorMessage <> '';
+end;
+
 function TWebDriver.ProcResponse(const Resp: string): string;
 var
   Json, Obj: TJsonObject;
@@ -1012,7 +1017,6 @@ begin
       if Json.Contains('value') then
       begin
         // success
-        FHasError := false;
         jType := Json.Types['value'];
         case jType of
           jdtString, jdtInt, jdtLong, jdtULong, jdtFloat, jdtDateTime, jdtBool:
@@ -1022,8 +1026,15 @@ begin
           jdtObject:
             begin
               Obj := Json.O['value'];
+              // obj 有时是 null
               if Assigned(Obj) then
-                result := Obj.ToJSON()
+              begin
+                // 可能有错误信息在这里返回
+                if Obj.Contains('message') then
+                  FErrorMessage := Obj.S['message']
+                else
+                  result := Obj.ToJSON();
+              end
               else
                 result := '';
             end;
@@ -1038,7 +1049,6 @@ begin
       else
       begin
         // falid
-        FHasError := True;
         if FJson.Contains('message') then
           FErrorMessage := FJson.S['message']
         else
@@ -1050,7 +1060,6 @@ begin
     end
     else
     begin
-      FHasError := True;
       FErrorMessage := 'http request error';
       result := '';
     end;
@@ -1182,12 +1191,10 @@ begin
     if FSessionID <> '' then
     begin
       result := FSessionID;
-      FHasError := false;
       FErrorMessage := '';
     end
     else
     begin
-      FHasError := True;
       if FJson.Contains('message') then
         FErrorMessage := FJson.S['message']
       else
@@ -1196,7 +1203,7 @@ begin
   end
   else
   begin
-    FHasError := True;
+
     FErrorMessage := 'time out';
   end;
 end;
@@ -1244,12 +1251,10 @@ begin
     if FSessionID <> '' then
     begin
       result := FSessionID;
-      FHasError := false;
       FErrorMessage := '';
     end
     else
     begin
-      FHasError := True;
       if FJson.Contains('message') then
         FErrorMessage := FJson.S['message']
       else
@@ -1258,7 +1263,6 @@ begin
   end
   else
   begin
-    FHasError := True;
     FErrorMessage := 'time out';
   end;
 end;
@@ -1298,12 +1302,10 @@ begin
     if FSessionID <> '' then
     begin
       result := FSessionID;
-      FHasError := false;
       FErrorMessage := '';
     end
     else
     begin
-      FHasError := True;
       if FJson.Contains('message') then
         FErrorMessage := FJson.S['message']
       else
@@ -1314,7 +1316,6 @@ begin
   end
   else
   begin
-    FHasError := True;
     FErrorMessage := 'time out';
   end;
 end;
@@ -1357,12 +1358,10 @@ begin
     if FSessionID <> '' then
     begin
       result := FSessionID;
-      FHasError := false;
       FErrorMessage := '';
     end
     else
     begin
-      FHasError := True;
       if FJson.Contains('message') then
         FErrorMessage := FJson.S['message']
       else
@@ -1371,7 +1370,6 @@ begin
   end
   else
   begin
-    FHasError := True;
     FErrorMessage := 'time out';
   end;
 end;
@@ -1440,12 +1438,10 @@ begin
     if FSessionID <> '' then
     begin
       result := FSessionID;
-      FHasError := false;
       FErrorMessage := '';
     end
     else
     begin
-      FHasError := True;
       if FJson.Contains('message') then
         FErrorMessage := FJson.S['message']
       else
@@ -1454,7 +1450,6 @@ begin
   end
   else
   begin
-    FHasError := True;
     FErrorMessage := 'time out';
   end;
 end;
