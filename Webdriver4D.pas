@@ -32,6 +32,7 @@ type
     FHasError: Boolean;
     FJson: TJsonObject;
     FOnResponse: TExecCommandEvent;
+    FPopup_Error: Boolean;
     FProcessInfo: TProcessInformation;
     FStartupInfo: TStartupInfo;
     function GetHost: string;
@@ -106,6 +107,7 @@ type
     property Cmd: TDriverCommand read FCmd write FCmd;
     property Port: integer read FPort write FPort;
     property Path: string read FPath write FPath;
+    property Popup_Error: Boolean read FPopup_Error write FPopup_Error;
     property SessionID: string read FSessionID write FSessionID;
     property W3C: Boolean read FW3C;
   published
@@ -183,6 +185,7 @@ begin
   FHasError := false;
   FErrorMessage := '';
   FW3C :=False;
+  FPopup_Error :=True;
 {$IFDEF FPC}
 {$ELSE}
   FCmd := TDelphiCommand.Create(self);
@@ -318,10 +321,14 @@ var
   Resp: string;
   Ele: string;
 begin
-  FJson.Clear;
+  {FJson.Clear;
   FJson.FromJSON(Element);
-  Ele := FJson.S['ELEMENT'];
-  command := Host + '/session/' + FSessionID + '/element/' + Ele + '/location';
+  Ele := FJson.S['ELEMENT'];}
+  Ele :=Element;
+  if W3C then
+     command := Host + '/session/' + FSessionID + '/element/' + Ele + '/rect'
+  else
+    command := Host + '/session/' + FSessionID + '/element/' + Ele + '/location';
   //Resp := FCmd.ExecuteGet(command);
   Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
@@ -334,9 +341,13 @@ var
   Ele: string;
 begin
   FJson.Clear;
-  FJson.FromJSON(Element);
-  Ele := FJson.S['ELEMENT'];
-  command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
+  {FJson.FromJSON(Element);
+  Ele := FJson.S['ELEMENT']; }
+  Ele :=Element;
+  if W3C then
+    command := Host + '/session/' + FSessionID + '/element/' + Ele + '/rect'
+  else
+    command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
   //Resp := FCmd.ExecuteGet(command);
   Resp :=ExecuteCommand(cGet,command);
   result := ProcResponse(Resp);
@@ -518,11 +529,19 @@ var
   Data: string;
   Resp: string;
 begin
-  command := Host + '/session/' + FSessionID + '/timeouts/implicit_wait';
-  FJson.Clear;
-  FJson.F['ms'] := waitTime;
-  FJson.S['session'] := FSessionID;
-  Data := FJson.ToJSON();
+  if W3C then
+  begin
+    command :=Host+'/session/'+FSessionID+'/timeouts';
+    FJson.Clear;
+    FJson.F['implicit'] :=waitTime;
+  end else
+  begin
+    command := Host + '/session/' + FSessionID + '/timeouts/implicit_wait';
+    FJson.Clear;
+    FJson.F['ms'] := waitTime;
+    FJson.S['session'] := FSessionID;
+    Data := FJson.ToJSON();
+  end;
   //Resp := FCmd.ExecutePost(command, Data);
   Resp :=ExecuteCommand(cPost,command,Data);
   ProcResponse(Resp);
@@ -627,12 +646,14 @@ var
   X, Y, Width, Height: integer;
   Ele: string;
 begin
-  FJson.Clear;
-  FJson.FromJSON(Element);
-  Ele := FJson.S['ELEMENT'];
+  {FJson.Clear;
+  FJson.FromJSON(Element); }
+ // Ele := FJson.S['ELEMENT'];
+  Ele :=Element;
   { command := Host + '/session/' + FSessionID + '/' + Element +
     '/screenshot'; }
   command := Host + '/session/' + FSessionID + '/screenshot';
+
   //Resp := FCmd.ExecuteGet(command);
   Resp :=ExecuteCommand(cGet,command);
   FJson.FromJSON(Resp);
@@ -735,13 +756,25 @@ var
   Data: string;
   Resp: string;
 begin
-  command := Host + '/session/' + FSessionID + '/window/' + WindowHandle
-    + '/size';
   FJson.Clear;
-  FJson.I['width'] := Width;
-  FJson.I['height'] := Height;
-  // FJson.S['sessionid'] := FSessionID;
-  FJson.S['windowHandle'] := WindowHandle;
+  if W3C then
+  begin
+    command := Host + '/session/' + FSessionID + '/window/rect';
+    FJson.I['width'] := Width;
+    FJson.I['height'] := Height;
+    // FJson.S['sessionid'] := FSessionID;
+    FJson.S['windowHandle'] := WindowHandle;
+  end
+  else
+  begin
+    command := Host + '/session/' + FSessionID + '/window/' + WindowHandle
+    + '/size';
+
+    FJson.I['width'] :=Width;
+    FJson.I['height'] :=Height;
+
+  end;
+
   Data := FJson.ToJSON();
   //Resp := FCmd.ExecutePost(command, Data);
   REsp :=ExecuteCommand(cPost,command,Data);
@@ -1011,6 +1044,8 @@ begin
         else
           FErrorMessage := Resp;
         result := '';
+        if FPopup_Error then
+          raise Exception.Create(FErrorMessage);
       end;
     end
     else
@@ -1273,6 +1308,8 @@ begin
         FErrorMessage := FJson.S['message']
       else
         FErrorMessage := Resp;
+      if FPopup_Error then
+        raise Exception.Create(FErrorMessage);
     end;
   end
   else
