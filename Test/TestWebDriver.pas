@@ -133,6 +133,7 @@ type
   published
     procedure TestMail163;
     procedure TestStartEdgeDriver;
+    procedure TestYouDao;
   end;
 
   TestPhantomjsDriver = class(TestTWebDriver)
@@ -142,6 +143,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestYouDao;
   end;
 
 implementation
@@ -1016,6 +1018,45 @@ begin
   End;
 end;
 
+procedure TestEdgeDriver.TestYouDao;
+var
+  WD:TEdgeDriver;
+  Element:string;
+  Script:string;
+  Text :string;
+begin
+  WD := TEdgeDriver.Create(nil);
+  try
+    WD.Address := 'localhost';
+    //WD.Port := 7777;
+    WD.StartDriver('d:\webdriver\MicrosoftWebDriver.exe');//路径正确
+    WD.Path :='';
+    Sleep(500);
+    WD.NewSession;
+    WD.GetURL('http://fanyi.youdao.com/?keyfrom=dict2.index');
+
+    Element := WD.FindElementByID('inputOriginal');
+    WD.SendKey(Element,'This is a Book');
+    Sleep(2000);
+    Element :=Wd.FindElementByID('transTarget');
+    Text :=Wd.GetElementAttribute(Element,'innerText');
+    CheckEquals(Text,'这是一本书');
+    Element := WD.FindElementByID('inputDelete');
+    Wd.ElementClick(Element);
+
+    Element := WD.FindElementByID('inputOriginal');
+    WD.SendKey(Element,'an Apple a day keeps doctor away.');
+    Sleep(2000);
+    Element :=Wd.FindElementByID('transTarget');
+    Text :=Wd.GetElementAttribute(Element,'innerText');
+    CheckEquals(Text,'一日一苹果，医生远离我。');
+
+
+  finally
+    FreeAndNil(WD);
+  end;
+end;
+
 procedure TestPhantomjsDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
@@ -1028,7 +1069,7 @@ procedure TestPhantomjsDriver.StartPhantomjs;
 begin
   FWD :=TPhantomjs.Create(nil);
   FWD.Port :=8888;
-  FWD.StartDriver('..\..\..\WebDriver\Phantomjs.exe');
+  FWD.StartDriver('D:\WebDriver\Phantomjs.exe');
   FWD.NewSession();
 
 end;
@@ -1040,6 +1081,33 @@ begin
     FreeAndNil(FWD);
   if Assigned(FCMD) then
     FreeAndNil(fCMD);
+
+end;
+
+procedure TestPhantomjsDriver.TestYouDao;
+var
+  Element:string;
+  Text :string;
+begin
+  FWD.NewSession;
+
+  FWD.GetURL('http://fanyi.youdao.com/?keyfrom=dict2.index');
+
+  Element := FWD.FindElementByID('inputOriginal');
+  FWD.SendKey(Element,'This is a Book');
+  Sleep(2000);
+  Element :=FWD.FindElementByID('transTarget');
+  Text :=trim(FWD.GetElementAttribute(Element,'innerText'));
+  CheckEquals(Text,'这是一本书');
+  Element := FWD.FindElementByID('inputDelete');
+  FWD.ElementClick(Element);
+
+  Element := FWD.FindElementByID('inputOriginal');
+  FWD.SendKey(Element,'an Apple a day keeps doctor away.');
+  Sleep(2000);
+  Element :=FWD.FindElementByID('transTarget');
+  Text :=Trim(FWD.GetElementAttribute(Element,'innerText'));
+  CheckEquals(Text,'一日一苹果，医生远离我。');
 
 end;
 

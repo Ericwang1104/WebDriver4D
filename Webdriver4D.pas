@@ -180,7 +180,8 @@ type
 implementation
 
 uses
-  System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils, Winapi.TlHelp32;
+  System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils, Winapi.TlHelp32,
+  System.Variants;
 
 constructor TWebDriver.Create(AOwner: TComponent);
 begin
@@ -398,6 +399,7 @@ var
   Command: string;
   Data: string;
   Resp: string;
+  JsonData:string;
 begin
   Command := Host + '/session/' + FSessionID + '/element';
 
@@ -434,10 +436,11 @@ begin
   // Resp := FCmd.ExecutePost(command, Data);
   Resp := ExecuteCommand(cPost, Command, Data);
   // result := ProcResponse(Resp);
+  JsonData :=ProcResponse(Resp);
   if not HasError then
   begin
     FCurrentElement.W3C := FW3C;
-    FCurrentElement.ElementData := ProcResponse(Resp);
+    FCurrentElement.ElementData := JsonData;
     result := FCurrentElement.GetElementID;
   end else
   begin
@@ -726,12 +729,18 @@ var
   Resp: string;
   KeyArr: string;
   I: integer;
+  Arr:TJsonArray;
 begin
   Ele := Element;
   Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/value';
 
   FJson.Clear;
-  KeyArr := '[';
+  Arr :=FJson.A['value'];
+  for I := 1 to Length(Key) do
+  begin
+    Arr.Add(Key[I]);
+  end;
+  {KeyArr := '[';
   for I := 1 to Length(Key) do
   begin
     if KeyArr = '[' then
@@ -740,9 +749,9 @@ begin
       KeyArr := KeyArr + ',' + '"' + Key[I] + '"';
   end;
 
-  KeyArr := KeyArr + ']';
+  KeyArr := KeyArr + ']'; }
 
-  FJson.A['value'].FromJSON(KeyArr);
+  //FJson.A['value'].FromJSON(KeyArr);
   FJson.S['text'] := Key;
   // FJson.S['sessionid'] := FSessionID;
   FJson.S['id'] := Ele;
@@ -1445,7 +1454,8 @@ begin
   begin
     FJson.FromJSON(Resp);
     FW3C := not FJson.Contains('status');
-    if not FJson.Contains('sessionId') then
+    if (not FJson.Contains('sessionId')) or
+    (FJson.Values['sessionId'].VariantValue= null) then
       FJson.FromJSON(FJson.O['value'].ToJSON());
     FSessionID := FJson.S['sessionId'];
     if FSessionID <> '' then
