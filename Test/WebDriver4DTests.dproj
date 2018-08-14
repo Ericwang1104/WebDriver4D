@@ -105,6 +105,7 @@
         <DCCReference Include="..\JsonDataObjects.pas"/>
         <DCCReference Include="..\WD_http.pas"/>
         <DCCReference Include="..\WD_httpDelphi.pas"/>
+        <DCCReference Include="..\webdriver_js_string.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

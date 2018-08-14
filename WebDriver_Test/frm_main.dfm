@@ -77,8 +77,6 @@ object Form1: TForm1
     TabOrder = 2
     object TabSheet1: TTabSheet
       Caption = 'command1'
-      ExplicitLeft = 12
-      ExplicitTop = 16
       object Label2: TLabel
         Left = 3
         Top = 24

@@ -23,7 +23,8 @@ uses
   Webdriver4D in '..\Webdriver4D.pas',
   JsonDataObjects in '..\JsonDataObjects.pas',
   WD_http in '..\WD_http.pas',
-  WD_httpDelphi in '..\WD_httpDelphi.pas';
+  WD_httpDelphi in '..\WD_httpDelphi.pas',
+  webdriver_js_string in '..\webdriver_js_string.pas';
 
 {frmSpSettings}
 

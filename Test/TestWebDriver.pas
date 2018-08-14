@@ -68,6 +68,7 @@ type
     procedure TestNewSession;
     procedure TestScreenShot;
     procedure TestGetElement;
+    procedure TestGetElementAttribute_InnerHTML;
     procedure TestGetElements;
     procedure TestImplicitly_Wait;
     procedure TestLoginWeibo;
@@ -131,8 +132,8 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure StartEdgeDriver;
     procedure TestMail163;
-    procedure TestStartEdgeDriver;
     procedure TestYouDao;
   end;
 
@@ -782,22 +783,32 @@ begin
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
 end;
 
+procedure TestTWebDriver.TestGetElementAttribute_InnerHTML;
+var
+  Element:string;
+  html:string;
+begin
+  FWD.GetURL('http://www.yahoo.com/');
+  Element :=FWD.FindElementByTag('body');
+  html :=FWD.GetElementAttribute(Element,'innerHTML');
+end;
+
 procedure TestTWebDriver.TestMail163;
 var
   Element:string;
 begin
-    //FWD.Port := 7777;
-    Sleep(500);
-    FWD.GetURL('http://mail.163.com');
-    FWD.SwitchToFrame('x-URS-iframe');
-    Sleep(3000);
-    Element := FWD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
-    FWD.SendKey(Element, 'demo');
-    Element := FWD.FindElementByXPath('//input[@name="password" and @type="password"]');
-    FWD.SendKey(Element, 'demo');
-    Element := FWD.FindElementByID('dologin');
-    FWD.ElementClick(Element);
-    FWD.Clear;
+  //FWD.Port := 7777;
+  Sleep(500);
+  FWD.GetURL('http://mail.163.com');
+  FWD.SwitchToFrame('x-URS-iframe');
+  Sleep(3000);
+  Element := FWD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
+  FWD.SendKey(Element, 'demo');
+  Element := FWD.FindElementByXPath('//input[@name="password" and @type="password"]');
+  FWD.SendKey(Element, 'demo');
+  Element := FWD.FindElementByID('dologin');
+  FWD.ElementClick(Element);
+  FWD.Clear;
 
 end;
 
@@ -911,10 +922,9 @@ end;
 
 procedure TestFirefoxDriver.SetUp;
 begin
-  FWD :=TFireFoxDriver.Create(nil);
   FCMD :=TDelphiCommand.Create(nil);
   StartFireFox;
-  FWD.Cmd :=FCMD;
+  
 end;
 
 procedure TestFirefoxDriver.TearDown;
@@ -929,7 +939,9 @@ end;
 procedure TestFirefoxDriver.StartFireFox;
 
 begin
+  FWD :=TFireFoxDriver.Create(nil);
   FWD.Port :=4444;
+  FWD.Cmd :=FCMD;
   (FWD as TFireFoxDriver).BrowserFileName := 'C:\Program Files\Mozilla Firefox\firefox.exe';
   FWD.StartDriver('..\..\..\WebDriver\geckodriver_x86.exe');
   FWD.NewSession;
@@ -964,10 +976,31 @@ end;
 procedure TestEdgeDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
+  FWD :=TEdgeDriver.Create(nil);
+  FWD.Cmd :=FCMD;
+  StartEdgeDriver;
+end;
+
+procedure TestEdgeDriver.StartEdgeDriver;
+var
+  Edge:TEdgeDriver;
+begin
+  Edge :=FWD as TEdgeDriver;
+  //Edge.Port :=7777;
+  if FileExists('..\..\..\WebDriver\MicrosoftWebDriver.exe') then
+  begin
+  
+    Edge.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
+  end else
+  begin
+    raise Exception.Create('Error Message');
+  end;
+  Edge.NewSession();
 end;
 
 procedure TestEdgeDriver.TearDown;
 begin
+  FreeAndNil(FWd);
   if Assigned(FCMD) then
     FreeAndNil(FCMD);
 
@@ -1002,20 +1035,6 @@ begin
   finally
     FreeAndNil(WD);
   end;
-end;
-
-procedure TestEdgeDriver.TestStartEdgeDriver;
-var
-  Edge:TEdgeDriver;
-begin
-  Edge :=TEdgeDriver.Create(nil);
-  Try
-    Edge.Port :=7777;
-    Edge.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
-    Edge.NewSession();
-  Finally
-    FreeAndNil(Edge);
-  End;
 end;
 
 procedure TestEdgeDriver.TestYouDao;
@@ -1061,7 +1080,6 @@ procedure TestPhantomjsDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
   StartPhantomjs;
-  FWD.Cmd :=FCMD;
 end;
 
 procedure TestPhantomjsDriver.StartPhantomjs;
@@ -1070,6 +1088,7 @@ begin
   FWD :=TPhantomjs.Create(nil);
   FWD.Port :=8888;
   FWD.StartDriver('D:\WebDriver\Phantomjs.exe');
+  FWD.Cmd :=FCMD;
   FWD.NewSession();
 
 end;
