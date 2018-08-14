@@ -123,6 +123,7 @@ type
     procedure TearDown; override;
   published
     procedure TestStartChromeDriver;
+    procedure StartChromeDriver;
   end;
 
   TestEdgeDriver = class(TestTWebDriver)
@@ -950,10 +951,12 @@ end;
 procedure TestChromeDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
+  StartChromeDriver;
 end;
 
 procedure TestChromeDriver.TearDown;
 begin
+  FreeAndNil(FWD);
   if Assigned(FCMD) then
     FreeAndNil(FCMD);
 
@@ -973,11 +976,21 @@ begin
   End;
 end;
 
+procedure TestChromeDriver.StartChromeDriver;
+var
+  Chrome:TChromeDriver;
+begin
+  Chrome :=TChromeDriver.Create(nil);
+  Chrome.Port :=6666;
+  Chrome.Cmd :=FCMD;
+  Chrome.StartDriver('..\..\..\WebDriver\ChromeDriver.exe');
+  Chrome.NewSession();
+
+end;
+
 procedure TestEdgeDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
-  FWD :=TEdgeDriver.Create(nil);
-  FWD.Cmd :=FCMD;
   StartEdgeDriver;
 end;
 
@@ -985,16 +998,11 @@ procedure TestEdgeDriver.StartEdgeDriver;
 var
   Edge:TEdgeDriver;
 begin
+  FWD :=TEdgeDriver.Create(nil);
   Edge :=FWD as TEdgeDriver;
-  //Edge.Port :=7777;
-  if FileExists('..\..\..\WebDriver\MicrosoftWebDriver.exe') then
-  begin
-  
-    Edge.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
-  end else
-  begin
-    raise Exception.Create('Error Message');
-  end;
+  Edge.Port :=7777;
+  Edge.Cmd :=FCMD;
+  Edge.StartDriver('..\..\..\WebDriver\MicrosoftWebDriver.exe');
   Edge.NewSession();
 end;
 
