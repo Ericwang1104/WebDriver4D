@@ -117,7 +117,6 @@ type
 
   TestChromeDriver = class(TestTWebDriver)
   private
-    FCMD: TDelphiCommand;
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -898,7 +897,7 @@ procedure TestTIEDriver.SetUp;
 begin
   FCMD :=TDelphiCommand.Create(nil);
   StartIEDriver;
-  FWD.Cmd :=FCMD;
+
 end;
 
 procedure TestTIEDriver.TearDown;
@@ -916,6 +915,7 @@ procedure TestTIEDriver.StartIEDriver;
 begin
   FWD :=TIEDriver.Create(nil);
   FWD.Port :=5555;
+  FWD.Cmd :=FCMD;
   FWD.StartDriver('..\..\..\WebDriver\IeDriverServer_x86.exe');
   FWD.NewSession();
 
@@ -981,10 +981,12 @@ var
   Chrome:TChromeDriver;
 begin
   Chrome :=TChromeDriver.Create(nil);
+  FWD :=Chrome;
   Chrome.Port :=6666;
   Chrome.Cmd :=FCMD;
   Chrome.StartDriver('..\..\..\WebDriver\ChromeDriver.exe');
   Chrome.NewSession();
+
 
 end;
 
