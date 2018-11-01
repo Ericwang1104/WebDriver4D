@@ -3,7 +3,7 @@ object Form1: TForm1
   Top = 0
   Caption = 'Form1'
   ClientHeight = 554
-  ClientWidth = 757
+  ClientWidth = 780
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,7 +14,7 @@ object Form1: TForm1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    757
+    780
     554)
   PixelsPerInch = 96
   TextHeight = 13
@@ -44,7 +44,7 @@ object Form1: TForm1
   object rgWebDriver: TRadioGroup
     Left = 8
     Top = 49
-    Width = 741
+    Width = 764
     Height = 57
     Anchors = [akLeft, akTop, akRight]
     Caption = 'WebDriver'
@@ -57,26 +57,30 @@ object Form1: TForm1
       'Edge Driver'
       'Phantomjs Driver')
     TabOrder = 0
+    ExplicitWidth = 741
   end
   object memLog: TMemo
     Left = 8
     Top = 426
-    Width = 741
+    Width = 764
     Height = 111
     Anchors = [akLeft, akRight, akBottom]
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitWidth = 741
   end
   object PageControl1: TPageControl
     Left = 8
     Top = 144
-    Width = 741
+    Width = 764
     Height = 257
     ActivePage = TabSheet1
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 2
+    ExplicitWidth = 741
     object TabSheet1: TTabSheet
       Caption = 'command1'
+      ExplicitWidth = 733
       object Label2: TLabel
         Left = 3
         Top = 24
@@ -137,31 +141,34 @@ object Form1: TForm1
   object txtWebDriverPath: TEdit
     Left = 89
     Top = 22
-    Width = 553
+    Width = 576
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 3
     OnChange = txtWebDriverPathChange
+    ExplicitWidth = 553
   end
   object Button2: TButton
-    Left = 648
+    Left = 671
     Top = 18
     Width = 101
     Height = 25
     Action = actStartWebDriver
     Anchors = [akTop, akRight]
     TabOrder = 4
+    ExplicitLeft = 648
   end
   object txtSession: TEdit
     Left = 50
     Top = 117
-    Width = 699
+    Width = 722
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     Color = clAppWorkSpace
     ReadOnly = True
     TabOrder = 5
     OnChange = txtWebDriverPathChange
+    ExplicitWidth = 699
   end
   object ActionList1: TActionList
     Left = 568

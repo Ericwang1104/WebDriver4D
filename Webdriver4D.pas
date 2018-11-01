@@ -87,8 +87,10 @@ type
     function Element_Location(const Element: string): string;
     procedure Element_ScreenShort(const Element, FileName: string);
     function Element_Size(const Element: string): string;
-    function ExecuteScript(const Script: string; const Args: string = '[]')
-      : string; virtual;
+    function ExecuteScript(const Script: string; const Args: string = '[]'):
+        string; virtual;
+    procedure ExecuteScriptByASync(const Script: string; const Args: string =
+        '[]'); virtual;
     function FindElementByName(const Name: string): string;
     function FindElementsByXPath(XPath: string): string;
     function FindElementsByTag(const TagName: string): string;
@@ -102,6 +104,7 @@ type
     procedure Refresh(ParamSessionID: string = '');
     procedure SendKey(const Element, Key: string);
     procedure SwitchToFrame(const FrameID: string); virtual;
+    procedure SwitchToParentFrame; virtual;
     procedure TerminateWebDriver;
     procedure WaitForLoaded;
     property ErrorMessage: string read FErrorMessage;
@@ -366,8 +369,8 @@ begin
 
 end;
 
-function TWebDriver.ExecuteScript(const Script: string;
-  const Args: string = '[]'): string;
+function TWebDriver.ExecuteScript(const Script: string; const Args: string =
+    '[]'): string;
 var
   Command: string;
   Data: string;
@@ -376,6 +379,7 @@ var
 begin
   Json :=TJsonObject.Create;
   try
+
     Command := Host + '/session/' + FSessionID + '/execute/sync';
     //FJson.Clear;
     //FJson.S['script'] := Script;
@@ -387,6 +391,7 @@ begin
     // Resp := FCmd.ExecutePost(command, Data);
     Resp := ExecuteCommand(cPost, Command, Data);
     result := ProcResponse(Resp);
+
   Finally
     FreeAndNil(Json);
   end;
@@ -1001,6 +1006,35 @@ begin
 
 end;
 
+procedure TWebDriver.ExecuteScriptByASync(const Script: string; const Args:
+    string = '[]');
+var
+  Command: string;
+  Data: string;
+  Resp: string;
+  Json:TJsonObject;
+begin
+  Json :=TJsonObject.Create;
+  try
+
+    Command := Host + '/session/' + FSessionID + '/execute/async';
+    //FJson.Clear;
+    //FJson.S['script'] := Script;
+    //FJson.A['args'].FromJSON(Args);
+    //Data := FJson.ToJSON();
+    Json.S['script'] :=Script;
+    Json.A['args'].FromJSON(args);
+    Json.S['sessionId'] :=FSessionID;
+    Data :=Json.ToJSON();
+    // Resp := FCmd.ExecutePost(command, Data);
+    resp :=ExecuteCommand(cPost, Command, Data);
+    ProcResponse(Resp);
+  Finally
+    FreeAndNil(Json);
+  end;
+
+end;
+
 function TWebDriver.FindElementByName(const Name: string): string;
 begin
   result := FindElement('name', Name);
@@ -1175,6 +1209,19 @@ begin
   // Data := FJson.ToJSON();
   Data := '{"id": {"ELEMENT": "' + ElementID + '", "' +
     FCurrentElement.GetElementName + '": "' + ElementID + '"}}';
+  Resp := ExecuteCommand(cPost, Command, Data);
+  ProcResponse(Resp);
+end;
+
+procedure TWebDriver.SwitchToParentFrame;
+var
+  Command: string;
+  Data: string;
+  Resp: string;
+  ElementID: string;
+begin
+  Command := Host + '/session/' + FSessionID + '/frame/parent';
+  Data :='{"sessionId":"'+FSessionID+'"}';
   Resp := ExecuteCommand(cPost, Command, Data);
   ProcResponse(Resp);
 end;

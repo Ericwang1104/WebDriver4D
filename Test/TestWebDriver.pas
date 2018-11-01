@@ -63,6 +63,7 @@ type
     procedure TestClearAllSession;
     procedure TestDeleteSession;
     procedure TestExecuteScript;
+    procedure TestExecuteASyncScript;
     procedure TestGetAllCookies;
     procedure TestGetURL;
     procedure TestNewSession;
@@ -781,6 +782,22 @@ procedure TestTWebDriver.TestClearAll;
 begin
   FWD.Clear;
   CheckEquals(FWD.HasError, false, FWD.ErrorMessage);
+end;
+
+procedure TestTWebDriver.TestExecuteASyncScript;
+var
+  script: string;
+begin
+  //FWD.Set_Window_Size(1366, 768);
+  //FWD.Implicitly_Wait(3000);
+  FWD.GetURL('https://passport.weibo.cn/signin/login');
+  script :=' var text '+
+  'text="";
+  ' for(var i=0;i<50;i++){'+
+  ' text=text
+
+  FWD.ExecuteScriptByASync(script);
+
 end;
 
 procedure TestTWebDriver.TestGetElementAttribute_InnerHTML;

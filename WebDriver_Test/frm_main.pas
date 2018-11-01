@@ -5,7 +5,7 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Webdriver4D,
-  System.Actions, Vcl.ActnList, Vcl.ComCtrls, System.IniFiles;
+  System.Actions, Vcl.ActnList, Vcl.ComCtrls, System.IniFiles, WD_httpDelphi;
 
 type
   TForm1 = class(TForm)
@@ -44,6 +44,7 @@ type
     procedure txtGetURLChange(Sender: TObject);
     procedure txtWebDriverPathChange(Sender: TObject);
   private
+    FCMD: TDelphiCommand;
     FIni: TIniFile;
     FWD: TWebDriver;
     function GetAppPath: string;
@@ -94,7 +95,7 @@ end;
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
   if Assigned(FWD) then FreeAndNil(FWD);
-
+  FreeAndNil(FCMD);
   FreeAndNil(FIni);
 end;
 
@@ -102,18 +103,19 @@ procedure TForm1.FormCreate(Sender: TObject);
 
 begin
   FIni :=TIniFile.Create(AppPath+'Set.ini');
-
+  FCMD :=TDelphiCommand.Create(self);
   WebdriverPath :=FIni.ReadString('Path','webdriverpath',AppPath+'webdriver\');
   txtGetURL.Text :=FIni.ReadString('Value','URL','')
 end;
 
 function TForm1.CreateWebDriver: TWebDriver;
 var
-  IE:TIEDriver;
-  FFox:TFireFoxDriver;
-  Chrome:TChromeDriver;
-  Edge:TEdgeDriver;
-  Phantomjs:TPhantomjs;
+  WD:TWebDriver;
+  IE:TIEDriver absolute WD;
+  FFox:TFireFoxDriver absolute WD;
+  Chrome:TChromeDriver absolute WD;
+  Edge:TEdgeDriver absolute WD;
+  Phantomjs:TPhantomjs absolute WD;
 begin
   if Assigned(FWD) then FreeAndNil(FWD);
 
@@ -122,6 +124,7 @@ begin
     begin
       IE :=TIEDriver.Create(nil);
       IE.StartDriver(WebdriverPath+'IEDriverServer_X86.exe');
+      IE.Cmd :=FCMD;
       txtSession.Text :=IE.NewSession;
       result :=IE;
     end;
@@ -130,6 +133,7 @@ begin
       FFox := TFireFoxDriver.Create(nil);
       FFox.BrowserFileName :='C:\Program Files\Mozilla Firefox\firefox.exe';
       FFox.StartDriver(WebdriverPath+'geckodriver_x86.exe');
+      FFox.Cmd :=FCMD;
       txtSession.Text :=FFox.NewSession;
       result :=FFox;
     end;
@@ -144,6 +148,7 @@ begin
     begin
       Edge :=TEdgeDriver.Create(nil);
       Edge.StartDriver(WebdriverPath+'MicrosoftWebDriver.exe');
+      Edge.Cmd :=FCMD;
       txtSession.Text :=Edge.NewSession;
       result :=Edge;
     end;
@@ -151,6 +156,7 @@ begin
     begin
       Phantomjs :=TPhantomjs.Create(nil);
       Phantomjs.StartDriver(WebdriverPath+'Phantomjs.exe');
+      Phantomjs.Cmd :=FCMD;
       txtSession.Text :=Phantomjs.NewSession;
       result :=Phantomjs;
     end;
