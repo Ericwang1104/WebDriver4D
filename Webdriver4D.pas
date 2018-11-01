@@ -3,33 +3,66 @@ unit Webdriver4D;
 interface
 
 uses
-  Classes, SysUtils, Windows, Vcl.Graphics, WD_http,
+  Classes, SysUtils, Windows, Contnrs, Vcl.Graphics, WD_http,
 {$IFDEF FPC} {$ELSE} WD_httpDelphi, {$ENDIF}
+//{$IFDEF FPC} {$ELSE} WD_httpCis, {$ENDIF}
   JsonDataObjects, Winapi.ShlObj;
 
 type
   TCommandType = (cGet, cPost, cDelete);
   TDriverType = (btPhantomjs, btIE, btFirefox, btChrome);
+  TWebDriver = class;
 
-  TElement = packed record
+  TWebElement = packed record
+  private
+    FKeyName: string;
+    FUsingName: string;
+    FWebDriver: TWebDriver;
+    function GetValue: string;
+    function GetName: string;
+  public
     W3C: Boolean;
     ElementData: string;
-    function GetElementID: string;
-    function GetElementName: string;
+    function Attribute(attributename: string): string;
+    procedure Click;
+    function Location: string;
+    procedure ScreenShort(const FileName: string); overload;
+    procedure ScreenShort(var bmp: TBitmap); overload;
+    procedure SendKey(Key: string);
+    function Size: string;
+
+    property WebDriver: TWebDriver read FWebDriver write FWebDriver;
+    property UsingName: string read FUsingName write FUsingName;
+    property KeyName: string read FKeyName write FKeyName;
+    property Value: string read GetValue; // 元件ID值
+    property Name: string read GetName; // 元件名
+  end;
+
+  TWebElements = packed record
   private
+    FKeyName: string;
+    FUsingName: string;
+    FWebDriver: TWebDriver;
+    function GetCount: Integer;
+    function GetItems(Index: Integer): TWebElement;
   public
+    W3C: Boolean;
+    ElementsData: String;
+    property KeyName: string read FKeyName write FKeyName;
+    property UsingName: string read FUsingName write FUsingName;
+    property WebDriver: TWebDriver read FWebDriver write FWebDriver;
+
+    property Count: Integer read GetCount;
+    property Items[Index: Integer]: TWebElement read GetItems;
   end;
 
   TExecCommandEvent = procedure(response: string) of object;
   TWebDriverClass = class of TWebDriver;
+
   TWebDriver = class(TComponent)
-  strict private
-    procedure CutImage(const FileName: string; Pic: string;
-      X, Y, Width, Height: integer);
   private
     FAddress: string;
     FCmd: TDriverCommand;
-    FCurrentElement: TElement;
     FErrorMessage: string;
     FOnResponse: TExecCommandEvent;
     FPopup_Error: Boolean;
@@ -38,23 +71,27 @@ type
     function GetDriverIsRunning: Boolean;
     function GetHasError: Boolean;
     function GetHost: string;
-    function GetTimeout: integer;
+    function GetTimeout: Integer;
     procedure SaveScreenToFileName(const FileName, Base64File: string);
-    procedure SetTimeout(const Value: integer);
+    procedure SetTimeout(const Value: Integer);
   strict protected
     FDriverName: string;
     FLogFile: string;
     FPath: string;
-    FPort: integer;
+    FPort: Integer;
     FSessionID: string;
     FW3C: Boolean;
     function BuildParams: string; virtual;
-    function ExecuteCommand(const CommandType: TCommandType;
-      const Command: string; const Param: string = ''): string;
-    function ProcResponse(const Resp: string): string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    function ExecuteCommand(const CommandType: TCommandType;
+      const Command: string; const Param: string = ''): string;
+    function ProcResponse(const Resp: string): string;
+    procedure CutImage(Pic: string; X, Y, Width, Height: Integer;
+      var bmp: TBitmap);
+    procedure BmpToPng(bmp: TBitmap; const FileName: string);
     procedure StartDriver(const ExeName: string;
       const Args: string = ''); virtual;
     procedure Assign(Source: TPersistent); override;
@@ -63,17 +100,25 @@ type
     function GetAllCookieJsonArray: string;
     function GetCookieByName(cookieName: string): string;
     function AddCookie(cookieName, cookieValue: string): string;
+
     procedure DeleteAllCookie;
     procedure DeleteCookie(const cookieName: string);
-    function FindElementByID(const ID: string): string;
-    function FindElementByTag(const TagName: string): string;
-    function FindElementByClassName(const ClasName: string): string;
-    function FindElement(usingName, KeyName: string): string;
-    function FindElements(const usingName, KeyName: string): string;
-    function FindElementByLinkText(const LinkText: string): string;
-    function FindElementByXPath(XPath: string): string;
+
+    function FindElement(UsingName, KeyName: string): TWebElement;
+    function FindElementByID(const ID: string): TWebElement;
+    function FindElementByTag(const TagName: string): TWebElement;
+    function FindElementByClassName(const ClasName: string): TWebElement;
+    function FindElementByLinkText(const LinkText: string): TWebElement;
+    function FindElementByXPath(XPath: string): TWebElement;
+
+    function FindElements(const UsingName, KeyName: string): TWebElements;
+    function FindElementsByXPath(XPath: string): TWebElements;
+    function FindElementsByTag(const TagName: string): TWebElements;
+    function FindElementsByLinkText(const LinkText: string): TWebElements;
+    function FindElementsByID(const ID: string): TWebElements;
+    function FindElementsByClassName(const ClasName: string): TWebElements;
+
     function GetCurrentWindowHandle: string;
-    function GetElementAttribute(const Element, attributename: string): string;
     procedure GetURL(const URL: string);
     function GetCurUrl: string;
     function NewSession: string; virtual; abstract;
@@ -81,28 +126,16 @@ type
     function GetDocument: string;
     function GetAllSession: string;
     procedure Save_screenshot(const FileName: string);
-    procedure Set_Window_Size(const Width, Height: integer;
+    procedure Set_Window_Size(const Width, Height: Integer;
       WindowHandle: string = 'current');
-    procedure ElementClick(const Element: string);
-    function Element_Location(const Element: string): string;
-    procedure Element_ScreenShort(const Element, FileName: string);
-    function Element_Size(const Element: string): string;
-    function ExecuteScript(const Script: string; const Args: string = '[]'):
-        string; virtual;
-    procedure ExecuteScriptByASync(const Script: string; const Args: string =
-        '[]'); virtual;
-    function FindElementByName(const Name: string): string;
-    function FindElementsByXPath(XPath: string): string;
-    function FindElementsByTag(const TagName: string): string;
-    function FindElementsByLinkText(const LinkText: string): string;
-    function FindElementsByID(const ID: string): string;
-    function FindElementsByClassName(const ClasName: string): string;
-
+    function ExecuteScript(const Script: string; const Args: string = '[]')
+      : string; virtual;
+    procedure ExecuteScriptByASync(const Script: string;
+      const Args: string = '[]'); virtual;
     procedure Implicitly_Wait(const waitTime: Double);
-    procedure PageLoadTimeout(const Timeout: integer);
+    procedure PageLoadTimeout(const Timeout: Integer);
     procedure Quit;
     procedure Refresh(ParamSessionID: string = '');
-    procedure SendKey(const Element, Key: string);
     procedure SwitchToFrame(const FrameID: string); virtual;
     procedure SwitchToParentFrame; virtual;
     procedure TerminateWebDriver;
@@ -115,14 +148,14 @@ type
     property Cmd: TDriverCommand read FCmd write FCmd;
     property DriverIsRunning: Boolean read GetDriverIsRunning;
     property DriverName: string read FDriverName;
-    property Port: integer read FPort write FPort;
+    property Port: Integer read FPort write FPort;
     property Path: string read FPath write FPath;
     property Popup_Error: Boolean read FPopup_Error write FPopup_Error;
     property SessionID: string read FSessionID write FSessionID;
     property W3C: Boolean read FW3C;
   published
     procedure Clear;
-    property Timeout: integer read GetTimeout write SetTimeout;
+    property Timeout: Integer read GetTimeout write SetTimeout;
     property OnResponse: TExecCommandEvent read FOnResponse write FOnResponse;
   end;
 
@@ -160,7 +193,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     function NewSession: string; override;
-    procedure StartDriver(const ExeName: string; const Args: string = ''); override;
+    procedure StartDriver(const ExeName: string;
+      const Args: string = ''); override;
     property BrowserFileName: string read FBrowserFileName
       write FBrowserFileName;
   end;
@@ -188,7 +222,7 @@ implementation
 
 uses
   System.NetEncoding, Vcl.Imaging.pngimage, System.StrUtils, Winapi.TlHelp32,
-  System.Variants, webdriver_js_string;
+  System.Variants;
 
 constructor TWebDriver.Create(AOwner: TComponent);
 begin
@@ -201,6 +235,10 @@ begin
   FErrorMessage := '';
   FW3C := False;
   FPopup_Error := True;
+{$IFDEF FPC}
+{$ELSE}
+  FCmd := TDelphiCommand.Create(self);
+{$ENDIF}
 end;
 
 destructor TWebDriver.Destroy;
@@ -219,10 +257,8 @@ begin
   begin
     WD := Source as TWebDriver;
     self.Address := WD.Address;
-
     self.Port := WD.Port;
     self.Path := WD.Path;
-
     self.Timeout := WD.Timeout;
   end;
 end;
@@ -240,24 +276,20 @@ begin
     Command := Host + '/session/' + ParamSessionID + '/window'
   else
     Command := Host + '/session/' + FSessionID + '/window';
-
   ExecuteCommand(cDelete, Command);
-  // FCmd.ExecuteDelete(command);
 end;
 
-procedure TWebDriver.CutImage(const FileName: string; Pic: string;
-  X, Y, Width, Height: integer);
+procedure TWebDriver.CutImage(Pic: string; X, Y, Width, Height: Integer;
+  var bmp: TBitmap);
 var
   png: TPngImage;
   Encd: TBase64Encoding;
   Stream: TMemoryStream;
   Byts: TBytes;
-  bmp: TBitmap;
   REctS, REctD: TRect;
 begin
   Encd := TBase64Encoding.Create;
   Stream := TMemoryStream.Create;
-  bmp := TBitmap.Create;
   png := TPngImage.Create;
   try
     Byts := Encd.DecodeStringToBytes(Pic);
@@ -278,12 +310,8 @@ begin
 
     bmp.Canvas.CopyRect(REctD, png.Canvas, REctS);
     // bitblt(pngd.Canvas.Handle,0,0,Width,height,png.Canvas.Handle,X,Y,SRCCOPY);
-    png.Assign(bmp);
-    png.SaveToFile(FileName);
-
   finally
     FreeAndNil(png);
-    FreeAndNil(bmp);
     FreeAndNil(Stream);
     FreeAndNil(Encd);
   end;
@@ -301,186 +329,106 @@ begin
   begin
     Command := Host + '/session/' + FSessionID;
   end;
-  // FCmd.ExecuteDelete(command);
   ExecuteCommand(cDelete, Command);
 end;
 
-procedure TWebDriver.ElementClick(const Element: string);
-var
-  Command: string;
-  Ele: string;
-  Data: string;
-  Resp: string;
-  Json:TJsonObject;
-begin
-  // FJson.FromJSON(Element);
-  Json :=TJsonObject.Create;
-  try
-    Ele := Element;
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/click';
-    // FJson.S['sessionid'] := FSessionID;
-    Json.S['id'] := Ele;
-    Data := Json.ToJSON(False);
-    // Resp := FCmd.ExecutePost(command, Data);
-    Resp := ExecuteCommand(cPost, Command, Data);
-    ProcResponse(Resp);
-  finally
-    FreeAndNil(Json);
-  end;
-end;
-
-function TWebDriver.Element_Location(const Element: string): string;
-var
-  Command: string;
-  Resp: string;
-  Ele: string;
-begin
-  { FJson.Clear;
-    FJson.FromJSON(Element);
-    Ele := FJson.S['ELEMENT']; }
-  Ele := Element;
-  if W3C then
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/rect'
-  else
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele +
-      '/location';
-  // Resp := FCmd.ExecuteGet(command);
-  Resp := ExecuteCommand(cGet, Command);
-  result := ProcResponse(Resp);
-end;
-
-function TWebDriver.Element_Size(const Element: string): string;
-var
-  Command: string;
-  Resp: string;
-  Ele: string;
-begin
-  //FJson.Clear;
-  { FJson.FromJSON(Element);
-    Ele := FJson.S['ELEMENT']; }
-  Ele := Element;
-  if W3C then
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/rect'
-  else
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/size';
-  // Resp := FCmd.ExecuteGet(command);
-  Resp := ExecuteCommand(cGet, Command);
-  result := ProcResponse(Resp);
-
-end;
-
-function TWebDriver.ExecuteScript(const Script: string; const Args: string =
-    '[]'): string;
+function TWebDriver.ExecuteScript(const Script: string;
+  const Args: string = '[]'): string;
 var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
-
     Command := Host + '/session/' + FSessionID + '/execute/sync';
-    //FJson.Clear;
-    //FJson.S['script'] := Script;
-    //FJson.A['args'].FromJSON(Args);
-    //Data := FJson.ToJSON();
-    Json.S['script'] :=Script;
-    Json.A['args'].FromJSON(args);
-    Data :=Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
+    Json.S['script'] := Script;
+    Json.A['args'].FromJSON(Args);
+    Data := Json.ToJSON();
     Resp := ExecuteCommand(cPost, Command, Data);
     result := ProcResponse(Resp);
-
   Finally
     FreeAndNil(Json);
   end;
-
 end;
 
-function TWebDriver.FindElementByID(const ID: string): string;
+function TWebDriver.FindElementByID(const ID: string): TWebElement;
 begin
   result := FindElement('id', ID);
 end;
 
-function TWebDriver.FindElementByTag(const TagName: string): string;
+function TWebDriver.FindElementByTag(const TagName: string): TWebElement;
 begin
   result := FindElement('tag name', TagName);
 end;
 
-function TWebDriver.FindElementByClassName(const ClasName: string): string;
+function TWebDriver.FindElementByClassName(const ClasName: string): TWebElement;
 begin
   result := FindElement('class name', ClassName);
 end;
 
-function TWebDriver.FindElement(usingName, KeyName: string): string;
+function TWebDriver.FindElement(UsingName, KeyName: string): TWebElement;
 var
   Command: string;
   Data: string;
   Resp: string;
-  JsonData:string;
-  Json:TJsonObject;
+  JsonData: string;
+  Json: TJsonObject;
 begin
   Command := Host + '/session/' + FSessionID + '/element';
-
   if FW3C then
   begin
-    if SameText(usingName, 'id') then
+    if SameText(UsingName, 'id') then
     begin
-      usingName := 'css selector';
+      UsingName := 'css selector';
       KeyName := format('[id="%s" ]', [KeyName]);
     end
-    else if SameText(usingName, 'tag name') then
+    else if SameText(UsingName, 'tag name') then
     begin
-      usingName := 'css selector';
+      UsingName := 'css selector';
     end
-    else if SameText(usingName, 'class name') then
+    else if SameText(UsingName, 'class name') then
     begin
-      usingName := 'css selector';
+      UsingName := 'css selector';
       KeyName := format('.%s', [KeyName]);
     end
-    else if SameText(usingName, 'name') then
+    else if SameText(UsingName, 'name') then
     begin
-      usingName := 'css selector';
+      UsingName := 'css selector';
       KeyName := format('[name="%s"]', [KeyName]);
-
     end;
   end;
-  Json :=TJsonObject.Create;
-  try
-  //FJson.Clear;
-  //FJson.S['using'] := usingName;
-  //FJson.S['value'] := KeyName;
-  // FJson.S['sessionid'] := FSessionID;
-  Json.S['using'] :=usingName;
-  Json.S['value'] :=KeyName;
 
-  Data := Json.ToJSON();
-  // Resp := FCmd.ExecutePost(command, Data);
+  Json := TJsonObject.Create;
+  try
+    Json.S['using'] := UsingName;
+    Json.S['value'] := KeyName;
+    Data := Json.ToJSON();
+  finally
+    Json.Free;
+  end;
   Resp := ExecuteCommand(cPost, Command, Data);
-  // result := ProcResponse(Resp);
-  JsonData :=ProcResponse(Resp);
+  JsonData := ProcResponse(Resp);
+
+  result.WebDriver := self;
+  result.UsingName := UsingName;
+  result.KeyName := KeyName;
   if not HasError then
   begin
-    FCurrentElement.W3C := FW3C;
-    FCurrentElement.ElementData := JsonData;
-    result := FCurrentElement.GetElementID;
-  end else
-  begin
-    Result :='';
-  end;
-  finally
-    FreeAndNil(Json);
-  end;
-
+    result.W3C := FW3C;
+    result.ElementData := JsonData;
+  end
+  else
+    result.ElementData := '';
 end;
 
-function TWebDriver.FindElementByLinkText(const LinkText: string): string;
+function TWebDriver.FindElementByLinkText(const LinkText: string): TWebElement;
 begin
   result := FindElement('link text', LinkText);
 end;
 
-function TWebDriver.FindElementByXPath(XPath: string): string;
+function TWebDriver.FindElementByXPath(XPath: string): TWebElement;
 begin
   result := FindElement('xpath', XPath);
 end;
@@ -491,7 +439,6 @@ var
   Resp: string;
 begin
   Command := Host + '/sessions';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   if Resp <> '' then
   begin
@@ -509,39 +456,8 @@ var
   Resp: string;
 begin
   Command := Host + '/session/' + FSessionID + '/window_handle';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   result := ProcResponse(Resp);
-end;
-
-function TWebDriver.GetElementAttribute(const Element, attributename
-  : string): string;
-var
-  Command: string;
-  Ele: string;
-  Resp: string;
-  js,args:string;
-begin
-  // FJson.FromJSON(Pchar(Element));
-  // Ele := FJson.S['ELEMENT'];
-  if FW3C then
-  begin
-    //Assert(False,'');
-    //ExecuteScript('');
-    Ele := Element;
-    js :=Format('return (%s).apply(null, arguments);',[ATTRIBUTE_JS]);
-    args:='[{"ELEMENT":'+'"'+FCurrentElement.GetElementID+'",'+'"'+FCurrentElement.GetElementName+'"'+
-    ':'+'"'+FCurrentElement.GetElementID+'"}'+','+'"'+attributename+'"]';
-    result :=Self.ExecuteScript(js,args);
-  end else
-  begin
-    Ele := Element;
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/attribute/'
-      + attributename;
-    // Resp := FCmd.ExecuteGet(command);
-    Resp := ExecuteCommand(cGet, Command);
-    result := ProcResponse(Resp);
-  end;
 end;
 
 function TWebDriver.GetHost: string;
@@ -554,15 +470,14 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
   Command := Host + '/session/' + FSessionID + '/url';
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     Json.S['url'] := URL;
     Json.S['sessionid'] := FSessionID;
     Data := Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
     Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
     if not HasError then
@@ -577,9 +492,9 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     if W3C then
     begin
@@ -593,7 +508,6 @@ begin
       Json.S['session'] := FSessionID;
       Data := Json.ToJSON();
     end;
-    // Resp := FCmd.ExecutePost(command, Data);
     Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
   finally
@@ -615,9 +529,9 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     if ParamSessionID <> '' then
       Command := Host + '/session/' + ParamSessionID + '/refresh'
@@ -625,7 +539,6 @@ begin
       Command := Host + '/session/' + FSessionID + '/refresh';
     Json.S['sessionid'] := FSessionID;
     Data := Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
     Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
   finally
@@ -660,7 +573,7 @@ var
 begin
   if not FileExists(ExeName) then
     raise Exception.Create('driver file not exists.' + ExeName);
-  FDriverName :=ExeName;
+  FDriverName := ExeName;
   if FProcessInfo.hProcess <> 0 then
     Exit;
   FillChar(FStartupInfo, SizeOf(FStartupInfo), 0);
@@ -686,7 +599,6 @@ var
   Pic: string;
 begin
   Command := Host + '/session/' + FSessionID + '/screenshot';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   Pic := ProcResponse(Resp);
   if not HasError then
@@ -695,144 +607,82 @@ begin
   end;
 end;
 
-procedure TWebDriver.Element_ScreenShort(const Element, FileName: string);
-var
-  Command: string;
-  Resp: string;
-  Pic: string;
-  Size: string;
-  Loc: string;
-  X, Y, Width, Height: integer;
-  Ele: string;
-  Json :TJsonObject;
-begin
-  { Json.Clear;
-    Json.FromJSON(Element); }
-  // Ele := Json.S['ELEMENT'];
-  Json :=TJsonObject.Create;
-  try
-    Ele := Element;
-    { command := Host + '/session/' + FSessionID + '/' + Element +
-      '/screenshot'; }
-    Command := Host + '/session/' + FSessionID + '/screenshot';
-
-    // Resp := FCmd.ExecuteGet(command);
-    Resp := ExecuteCommand(cGet, Command);
-    Json.FromJSON(Resp);
-    if not HasError then
-    begin
-      Pic := Json.S['value'];
-      Loc := Element_Location(Element);
-      Json.FromJSON(Loc);
-
-      X := Json.I['x'];
-      Y := Json.I['y'];
-      Size := Element_Size(Element);
-      Json.FromJSON(Size);
-      Width := Json.I['width'];
-      Height := Json.I['height'];
-      CutImage(FileName, Pic, X, Y, Width, Height);
-    end;
-  finally
-    FreeAndNil(Json);
-  end;
-end;
-
-function TWebDriver.FindElementsByXPath(XPath: string): string;
+function TWebDriver.FindElementsByXPath(XPath: string): TWebElements;
 begin
   result := FindElements('xpath', XPath);
 end;
 
-function TWebDriver.FindElementsByTag(const TagName: string): string;
+function TWebDriver.FindElementsByTag(const TagName: string): TWebElements;
 begin
   result := FindElements('tag name', TagName);
 end;
 
-function TWebDriver.FindElementsByLinkText(const LinkText: string): string;
+function TWebDriver.FindElementsByLinkText(const LinkText: string)
+  : TWebElements;
 begin
   result := FindElements('link text', LinkText);
 end;
 
-function TWebDriver.FindElementsByID(const ID: string): string;
+function TWebDriver.FindElementsByID(const ID: string): TWebElements;
 begin
   result := FindElements('id', ID);
 end;
 
-function TWebDriver.FindElementsByClassName(const ClasName: string): string;
+function TWebDriver.FindElementsByClassName(const ClasName: string)
+  : TWebElements;
 begin
   result := FindElements('class name', ClassName);
 end;
 
-function TWebDriver.FindElements(const usingName, KeyName: string): string;
+function TWebDriver.FindElements(const UsingName, KeyName: string)
+  : TWebElements;
 var
   Command: string;
   Data: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
+  JsonData: string;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     Command := Host + '/session/' + FSessionID + '/elements';
     Json.S['value'] := KeyName;
     Json.S['sessionid'] := FSessionID;
-    Json.S['using'] := usingName;
+    Json.S['using'] := UsingName;
     Data := Json.ToJSON(False);
-    // Resp := FCmd.ExecutePost(command, Data);
-    Resp := ExecuteCommand(cPost, Command, Data);
-    result := ProcResponse(Resp);
   finally
     FreeAndNil(Json);
   end;
+  Resp := ExecuteCommand(cPost, Command, Data);
+  JsonData := ProcResponse(Resp);
+
+  result.WebDriver := self;
+  result.UsingName := UsingName;
+  result.KeyName := KeyName;
+  if not HasError then
+  begin
+    result.W3C := FW3C;
+    result.ElementsData := JsonData;
+  end
+  else
+    result.ElementsData := '';
 end;
 
-procedure TWebDriver.SendKey(const Element, Key: string);
-var
-  Command: string;
-  Ele: string;
-  Data: string;
-  Resp: string;
-  KeyArr: string;
-  I: integer;
-  Arr:TJsonArray;
-  Json:TJsonObject;
-begin
-  Json :=TJsonObject.Create;
-  try
-    Ele := Element;
-    Command := Host + '/session/' + FSessionID + '/element/' + Ele + '/value';
-    Arr :=Json.A['value'];
-    for I := 1 to Length(Key) do
-    begin
-      Arr.Add(Key[I]);
-    end;
-    Json.S['text'] := Key;
-    // Json.S['sessionid'] := FSessionID;
-    Json.S['id'] := Ele;
-    Data := Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
-    Resp := ExecuteCommand(cPost, Command, Data);
-    ProcResponse(Resp);
-  finally
-    FreeAndNil(Json);
-  end;
-end;
-
-procedure TWebDriver.Set_Window_Size(const Width, Height: integer;
+procedure TWebDriver.Set_Window_Size(const Width, Height: Integer;
   WindowHandle: string = 'current');
 var
   Command: string;
   Data: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     if W3C then
     begin
       Command := Host + '/session/' + FSessionID + '/window/rect';
       Json.I['width'] := Width;
       Json.I['height'] := Height;
-      // Json.S['sessionid'] := FSessionID;
       Json.S['windowHandle'] := WindowHandle;
     end
     else
@@ -846,7 +696,6 @@ begin
     end;
 
     Data := Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
     Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
   finally
@@ -866,7 +715,7 @@ var
   AllSession: string;
   Json: TJsonArray;
   Session: string;
-  I: integer;
+  I: Integer;
 begin
   AllSession := GetAllSession;
   Json := TJsonArray.Create;
@@ -891,7 +740,6 @@ var
   Command: string;
 begin
   Command := Host + '/session/' + FSessionID + '/cookie';
-  // FCmd.ExecuteDelete(command);
   ExecuteCommand(cDelete, Command)
 end;
 
@@ -900,14 +748,13 @@ var
   Command: string;
 begin
   Command := Host + '/session/' + FSessionID + '/cookie' + '/' + cookieName;
-  // FCmd.ExecuteDelete(command);
   ExecuteCommand(cDelete, Command);
 end;
 
 function TWebDriver.GetAllCookie: string;
 var
   S: string;
-  I: integer;
+  I: Integer;
   aryJson: TJsonArray;
   tmpJson: TJsonObject;
 begin
@@ -929,31 +776,30 @@ begin
   end;
 end;
 
-function TWebDriver.GetTimeout: integer;
+function TWebDriver.GetTimeout: Integer;
 begin
   result := FCmd.Timeout;
 end;
 
-procedure TWebDriver.PageLoadTimeout(const Timeout: integer);
+procedure TWebDriver.PageLoadTimeout(const Timeout: Integer);
 var
   Command: string;
   Data: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     Command := Host + '/session/' + FSessionID + '/timeouts';
     Json.Clear;
     Json.S['name'] := 'pageLoad';
     Json.I['value'] := Timeout;
     Data := Json.ToJSON(False);
-    // Resp := FCmd.ExecutePost(command, Data);
-    Resp := ExecuteCommand(cPost, Command, Data);
-    ProcResponse(Resp);
   finally
     FreeAndNil(Json);
   end;
+  Resp := ExecuteCommand(cPost, Command, Data);
+  ProcResponse(Resp);
 end;
 
 function TWebDriver.AddCookie(cookieName, cookieValue: string): string;
@@ -963,27 +809,37 @@ var
   Resp: string;
   Json, ckJson: TJsonObject;
 begin
-  //FJson.Clear;
-  //ckJson := FJson.O['cookie'];
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
-    ckJson :=Json.O['cookie'];
+    ckJson := Json.O['cookie'];
     ckJson.S['name'] := cookieName;
     ckJson.S['value'] := cookieValue;
     Command := Host + '/session/' + FSessionID + '/cookie';
     Data := Json.ToJSON(True);
-    // Resp := FCmd.ExecutePost(command, Data);
-    Resp := ExecuteCommand(cPost, Command, Data);
-    ProcResponse(Resp);
   finally
     FreeAndNil(Json);
+  end;
+  Resp := ExecuteCommand(cPost, Command, Data);
+  ProcResponse(Resp);
+end;
+
+procedure TWebDriver.BmpToPng(bmp: TBitmap; const FileName: string);
+var
+  png: TPngImage;
+begin
+  png := TPngImage.Create;
+  try
+    png.Assign(bmp);
+    png.SaveToFile(FileName);
+  finally
+    FreeAndNil(png);
   end;
 end;
 
 function TWebDriver.ExecuteCommand(const CommandType: TCommandType;
   const Command: string; const Param: string = ''): string;
 begin
-  FErrorMessage :='';
+  FErrorMessage := '';
   case CommandType of
     cGet:
       begin
@@ -1006,38 +862,26 @@ begin
 
 end;
 
-procedure TWebDriver.ExecuteScriptByASync(const Script: string; const Args:
-    string = '[]');
+procedure TWebDriver.ExecuteScriptByASync(const Script: string;
+  const Args: string = '[]');
 var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
-
     Command := Host + '/session/' + FSessionID + '/execute/async';
-    //FJson.Clear;
-    //FJson.S['script'] := Script;
-    //FJson.A['args'].FromJSON(Args);
-    //Data := FJson.ToJSON();
-    Json.S['script'] :=Script;
-    Json.A['args'].FromJSON(args);
-    Json.S['sessionId'] :=FSessionID;
-    Data :=Json.ToJSON();
-    // Resp := FCmd.ExecutePost(command, Data);
-    resp :=ExecuteCommand(cPost, Command, Data);
+    Json.S['script'] := Script;
+    Json.A['args'].FromJSON(Args);
+    Json.S['sessionId'] := FSessionID;
+    Data := Json.ToJSON();
+    Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
   Finally
     FreeAndNil(Json);
   end;
-
-end;
-
-function TWebDriver.FindElementByName(const Name: string): string;
-begin
-  result := FindElement('name', Name);
 end;
 
 function TWebDriver.GetDocument: string;
@@ -1048,7 +892,6 @@ begin
   if FSessionID <> '' then
   begin
     Command := Host + '/session/' + FSessionID + '/source';
-    // result := ProcResponse(FCmd.ExecuteGet(command));
     result := ProcResponse(ExecuteCommand(cGet, Command));
   end;
 end;
@@ -1059,7 +902,6 @@ var
   Resp: string;
 begin
   Command := Host + '/session/' + FSessionID + '/cookie';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   if Resp <> '' then
     result := ProcResponse(Resp)
@@ -1072,13 +914,12 @@ var
   Command: string;
   Resp: string;
   S: string;
-  I: integer;
+  I: Integer;
   aryJson: TJsonArray;
   tmpJson: TJsonObject;
 begin
   // 用标准接口返回是错误,故用此方法
   Command := Host + '/session/' + FSessionID + '/cookie';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   if Resp <> '' then
     S := ProcResponse(Resp)
@@ -1108,14 +949,13 @@ var
   Resp: string;
 begin
   Command := Host + '/session/' + FSessionID + '/url';
-  // Resp := FCmd.ExecuteGet(command);
   Resp := ExecuteCommand(cGet, Command);
   result := ProcResponse(Resp);
 end;
 
 function TWebDriver.GetDriverIsRunning: Boolean;
 begin
-  Result := FProcessInfo.hProcess <>0;
+  result := FProcessInfo.hProcess <> 0;
 end;
 
 function TWebDriver.GetHasError: Boolean;
@@ -1188,7 +1028,7 @@ begin
   end;
 end;
 
-procedure TWebDriver.SetTimeout(const Value: integer);
+procedure TWebDriver.SetTimeout(const Value: Integer);
 begin
   FCmd.Timeout := Value;
 end;
@@ -1198,19 +1038,17 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  ElementID: string;
+  Element: TWebElement;
 begin
   Command := Host + '/session/' + FSessionID + '/frame';
-  ElementID := FindElementByID(FrameID);
-  { FJson.Clear;
-    FJson.S['id'] := '{"ELEMENT":'+'"'+ElementID+'"'+','+ }
-  // '"'+FCurrentElement.GetElementName+'":'+'"'+ElementID+'"}';
-  // FJson.S['sessionid'] := FSessionID;
-  // Data := FJson.ToJSON();
-  Data := '{"id": {"ELEMENT": "' + ElementID + '", "' +
-    FCurrentElement.GetElementName + '": "' + ElementID + '"}}';
-  Resp := ExecuteCommand(cPost, Command, Data);
-  ProcResponse(Resp);
+  Element := FindElementByID(FrameID);
+  if Element.ElementData <> '' then
+  begin
+    Data := '{"id": {"ELEMENT": "' + Element.Value + '", "' + Element.Name +
+      '": "' + Element.Value + '"}}';
+    Resp := ExecuteCommand(cPost, Command, Data);
+    ProcResponse(Resp);
+  end;
 end;
 
 procedure TWebDriver.SwitchToParentFrame;
@@ -1218,22 +1056,30 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  ElementID: string;
 begin
   Command := Host + '/session/' + FSessionID + '/frame/parent';
-  Data :='{"sessionId":"'+FSessionID+'"}';
+  Data := '{"sessionId":"' + FSessionID + '"}';
   Resp := ExecuteCommand(cPost, Command, Data);
   ProcResponse(Resp);
 end;
 
 procedure TWebDriver.WaitForLoaded;
 var
-  I: integer;
+  I: Integer;
+  isMainThread: Boolean;
+  j: Integer;
 begin
+  isMainThread := (GetCurrentThreadId = MainThreadId);
   I := 0;
   while I < Timeout do
   begin
-    sleep(500);
+    for j := 1 to 100 do
+    begin
+      sleep(10);
+      if isMainThread then
+        // Application.ProcessMessages;
+        CheckSynchronize(0);
+    end;
     Inc(I, 1000);
     if ExecuteScript('return document.readyState') = 'complete' then
       break;
@@ -1297,9 +1143,9 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     Command := Host + '/session/' + FSessionID + '/execute';
     Json.S['script'] := Script;
@@ -1325,82 +1171,13 @@ const
 var
   Command: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     result := '';
     Command := Host + '/session';
-    // Resp := FCmd.ExecutePost(command, Phantomjs_PARAM);
     Resp := ExecuteCommand(cPost, Command, Phantomjs_PARAM);
-    if Resp <> '' then
-    begin
-      Json.FromJSON(Resp);
-      FW3C := not Json.Contains('status');
-      if not Json.Contains('sessionId') then
-        Json.FromJSON(Json.O['value'].ToJSON());
-      FSessionID := Json.S['sessionId'];
-      if FSessionID <> '' then
-      begin
-        result := FSessionID;
-        FErrorMessage := '';
-      end
-      else
-      begin
-        if Json.Contains('message') then
-          FErrorMessage := Json.S['message']
-        else
-          FErrorMessage := Resp;
-      end;
-  end
-  else
-  begin
-    FErrorMessage := 'time out';
-  end;
-  finally
-    FreeAndNil(Json);
-  end;
-end;
-
-constructor TFireFoxDriver.Create(AOwner: TComponent);
-begin
-  inherited;
-  FPort := 4444;
-  FPath := '';
-  FBrowserFileName := '';
-end;
-
-function TFireFoxDriver.BuildParams: string;
-begin
-  result := ' --port '+IntToStr(FPort);
-end;
-
-function TFireFoxDriver.NewSession: string;
-const
-  Firefox_Param =
-    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "firefox", '
-    + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' +
-    '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
-var
-  Command: string;
-  Resp: string;
-  JsStr: string;
-  Json :TJsonObject;
-begin
-  Json :=TJsonObject.Create;
-  try
-    if FBrowserFileName <> '' then
-      if not FileExists(FBrowserFileName) then
-      begin
-        raise Exception.Create('firefox file is not exits.' + FBrowserFileName +
-          '.please setup browserfile property');
-      end;
-
-    result := '';
-    Command := Host + '/session';
-    JsStr := ReplaceStr(FBrowserFileName, '\', '\\');
-    // Resp := FCmd.ExecutePost(command, Format(Firefox_Param, [JsStr, JsStr]));
-    Resp := ExecuteCommand(cPost, Command, format(Firefox_Param, [JsStr, JsStr]));
     if Resp <> '' then
     begin
       Json.FromJSON(Resp);
@@ -1430,14 +1207,83 @@ begin
   end;
 end;
 
-procedure TFireFoxDriver.StartDriver(const ExeName: string; const Args: string
-    = '');
+constructor TFireFoxDriver.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPort := 4444;
+  FPath := '/wd/hub'; // 旧版,我目前用的旧版
+  // FPath:=''; 新版
+  FBrowserFileName := '';
+end;
+
+function TFireFoxDriver.BuildParams: string;
+begin
+  result := ' --port ' + inttostr(FPort);
+end;
+
+function TFireFoxDriver.NewSession: string;
+const
+  Firefox_Param =
+    '{"capabilities": {"firstMatch": [{}], "alwaysMatch": {"browserName": "firefox", '
+    + '"acceptInsecureCerts": true, "moz:firefoxOptions": ' +
+    '{"binary": "%s"}}}, "desiredCapabilities": {"browserName": "firefox", "acceptInsecureCerts": true, "moz:firefoxOptions": {"binary": "%s"}}}';
+var
+  Command: string;
+  Resp: string;
+  JsStr: string;
+  Json: TJsonObject;
+begin
+  Json := TJsonObject.Create;
+  try
+    if FBrowserFileName <> '' then
+      if not FileExists(FBrowserFileName) then
+      begin
+        raise Exception.Create('firefox file is not exits.' + FBrowserFileName +
+          '.please setup browserfile property');
+      end;
+
+    result := '';
+    Command := Host + '/session';
+    JsStr := ReplaceStr(FBrowserFileName, '\', '\\');
+    Resp := ExecuteCommand(cPost, Command, format(Firefox_Param,
+      [JsStr, JsStr]));
+    if Resp <> '' then
+    begin
+      Json.FromJSON(Resp);
+      FW3C := not Json.Contains('status');
+      if not Json.Contains('sessionId') then
+        Json.FromJSON(Json.O['value'].ToJSON());
+      FSessionID := Json.S['sessionId'];
+      if FSessionID <> '' then
+      begin
+        result := FSessionID;
+        FErrorMessage := '';
+      end
+      else
+      begin
+        if Json.Contains('message') then
+          FErrorMessage := Json.S['message']
+        else
+          FErrorMessage := Resp;
+      end;
+    end
+    else
+    begin
+      FErrorMessage := 'time out';
+    end;
+  finally
+    FreeAndNil(Json);
+  end;
+end;
+
+procedure TFireFoxDriver.StartDriver(const ExeName: string;
+  const Args: string = '');
 var
   Command: string;
 begin
   if not FileExists(ExeName) then
     raise Exception.Create('driver file not exists.' + ExeName);
-  FDriverName :=ExeName;
+  FDriverName := ExeName;
   if FProcessInfo.hProcess <> 0 then
     Exit;
   FillChar(FStartupInfo, SizeOf(FStartupInfo), 0);
@@ -1460,6 +1306,7 @@ constructor TIEDriver.Create(AOwner: TComponent);
 begin
   inherited;
   FPort := 5555;
+  FPath := '';
 end;
 
 function TIEDriver.BuildParams: string;
@@ -1474,40 +1321,39 @@ const
 var
   Command: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
-  result := '';
-  Command := Host + '/session';
-  // Resp := FCmd.ExecutePost(command, IE_Param);
-  Resp := ExecuteCommand(cPost, Command, IE_Param);
-  if Resp <> '' then
-  begin
-    Json.FromJSON(Resp);
-    FW3C := not Json.Contains('status');
-    if not Json.Contains('sessionId') then
-      Json.FromJSON(Json.O['value'].ToJSON());
-    FSessionID := Json.S['sessionId'];
-    if FSessionID <> '' then
+    result := '';
+    Command := Host + '/session';
+    Resp := ExecuteCommand(cPost, Command, IE_Param);
+    if Resp <> '' then
     begin
-      result := FSessionID;
-      FErrorMessage := '';
+      Json.FromJSON(Resp);
+      FW3C := not Json.Contains('status');
+      if not Json.Contains('sessionId') then
+        Json.FromJSON(Json.O['value'].ToJSON());
+      FSessionID := Json.S['sessionId'];
+      if FSessionID <> '' then
+      begin
+        result := FSessionID;
+        FErrorMessage := '';
+      end
+      else
+      begin
+        if Json.Contains('message') then
+          FErrorMessage := Json.S['message']
+        else
+          FErrorMessage := Resp;
+        if FPopup_Error then
+          raise Exception.Create(FErrorMessage);
+      end;
     end
     else
     begin
-      if Json.Contains('message') then
-        FErrorMessage := Json.S['message']
-      else
-        FErrorMessage := Resp;
-      if FPopup_Error then
-        raise Exception.Create(FErrorMessage);
+      FErrorMessage := 'time out';
     end;
-  end
-  else
-  begin
-    FErrorMessage := 'time out';
-  end;
   finally
     FreeAndNil(Json);
   end;
@@ -1516,7 +1362,8 @@ end;
 constructor TChromeDriver.Create(AOwner: TComponent);
 begin
   inherited;
-  FPort := 6666;
+  FPort := 9515;
+  FPath := '';
 end;
 
 function TChromeDriver.BuildParams: string;
@@ -1534,38 +1381,37 @@ const
 var
   Command: string;
   Resp: string;
-  Json:TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
-  result := '';
-  Command := Host + '/session';
-  // Resp := FCmd.ExecutePost(command, Chrome_Param);
-  Resp := ExecuteCommand(cPost, Command, Chrome_Param);
-  if Resp <> '' then
-  begin
-    Json.FromJSON(Resp);
-    FW3C := not Json.Contains('status');
-    if not Json.Contains('sessionId') then
-      Json.FromJSON(Json.O['value'].ToJSON());
-    FSessionID := Json.S['sessionId'];
-    if FSessionID <> '' then
+    result := '';
+    Command := Host + '/session';
+    Resp := ExecuteCommand(cPost, Command, Chrome_Param);
+    if Resp <> '' then
     begin
-      result := FSessionID;
-      FErrorMessage := '';
+      Json.FromJSON(Resp);
+      FW3C := not Json.Contains('status');
+      if not Json.Contains('sessionId') then
+        Json.FromJSON(Json.O['value'].ToJSON());
+      FSessionID := Json.S['sessionId'];
+      if FSessionID <> '' then
+      begin
+        result := FSessionID;
+        FErrorMessage := '';
+      end
+      else
+      begin
+        if Json.Contains('message') then
+          FErrorMessage := Json.S['message']
+        else
+          FErrorMessage := Resp;
+      end;
     end
     else
     begin
-      if Json.Contains('message') then
-        FErrorMessage := Json.S['message']
-      else
-        FErrorMessage := Resp;
+      FErrorMessage := 'time out';
     end;
-  end
-  else
-  begin
-    FErrorMessage := 'time out';
-  end;
   finally
     FreeAndNil(Json);
   end;
@@ -1578,7 +1424,7 @@ var
 begin
   if not FileExists(ExeName) then
     raise Exception.Create('driver file not exists.' + ExeName);
-  FDriverName :=ExeName;
+  FDriverName := ExeName;
   if FProcessInfo.hProcess <> 0 then
     Exit;
   FillChar(FStartupInfo, SizeOf(FStartupInfo), 0);
@@ -1601,6 +1447,7 @@ constructor TEdgeDriver.Create(AOwner: TComponent);
 begin
   inherited;
   FPort := 7777;
+  FPath := '';
   FAddress := 'localhost';
 end;
 
@@ -1618,20 +1465,19 @@ const
 var
   Command: string;
   Resp: string;
-  Json :TJsonObject;
+  Json: TJsonObject;
 begin
-  Json :=TJsonObject.Create;
+  Json := TJsonObject.Create;
   try
     result := '';
     Command := Host + '/session';
-    // Resp := FCmd.ExecutePost(command, Edge_Param);
     Resp := ExecuteCommand(cPost, Command, Edge_Param);
     if Resp <> '' then
     begin
       Json.FromJSON(Resp);
       FW3C := not Json.Contains('status');
       if (not Json.Contains('sessionId')) or
-      (Json.Values['sessionId'].VariantValue= null) then
+        (Json.Values['sessionId'].VariantValue = null) then
         Json.FromJSON(Json.O['value'].ToJSON());
       FSessionID := Json.S['sessionId'];
       if FSessionID <> '' then
@@ -1661,51 +1507,281 @@ var
   Command: string;
   Data: string;
   Resp: string;
-  ElementID: string;
 begin
   Command := Host + '/session/' + FSessionID + '/frame';
-
-  Data := '{"id": "'+frameID+'",'+'"sessionId":"'+FSessionID+'"}';
+  Data := '{"id": "' + FrameID + '",' + '"sessionId":"' + FSessionID + '"}';
   Resp := ExecuteCommand(cPost, Command, Data);
   ProcResponse(Resp);
 end;
 
-function TElement.GetElementID: string;
+function TWebElement.Attribute(attributename: string): string;
 var
-  Json: TJsonObject;
+  Command: string;
+  Ele: string;
+  Resp: string;
 begin
-  Json := TJsonObject.Create;
-  try
-    Json.FromJSON(ElementData);
-    if not W3C then
-    begin
-      result := Json.S['ELEMENT'];
-    end
-    else
-    begin
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    Command := WebDriver.Host + '/session/' + WebDriver.SessionID + '/element/'
+      + Ele + '/attribute/' + attributename;
+    Resp := WebDriver.ExecuteCommand(cGet, Command);
+    result := WebDriver.ProcResponse(Resp);
+  end
+  else
+    result := '';
+end;
 
-      result := Json.Items[0].Value;
-
+procedure TWebElement.Click;
+var
+  Command: string;
+  Ele: string;
+  Data: string;
+  Resp: string;
+  FJson: TJsonObject;
+begin
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+        '/element/' + Ele + '/click';
+      FJson := TJsonObject.Create;
+      FJson.S['using'] := UsingName;
+      FJson.S['value'] := KeyName;
+      FJson.S['id'] := Ele;
+      Data := FJson.ToJSON(False);
+      Resp := WebDriver.ExecuteCommand(cPost, Command, Data);
+      WebDriver.ProcResponse(Resp);
     end;
-  finally
-    FreeAndNil(Json);
   end;
 end;
 
-function TElement.GetElementName: string;
+function TWebElement.GetValue: string;
 var
   Json: TJsonObject;
 begin
-  if not W3C then
-    result := ElementData
-  else
+  if ElementData <> '' then
   begin
     Json := TJsonObject.Create;
     try
       Json.FromJSON(ElementData);
-      result := Json.Names[0];
+      if not W3C then
+      begin
+        result := Json.S['ELEMENT'];
+      end
+      else
+      begin
+        result := Json.Items[0].Value;
+      end;
     finally
       FreeAndNil(Json);
+    end;
+  end
+  else
+    result := '';
+end;
+
+function TWebElement.GetName: string;
+var
+  Json: TJsonObject;
+begin
+  if ElementData <> '' then
+  begin
+    if not W3C then
+      result := ElementData
+    else
+    begin
+      Json := TJsonObject.Create;
+      try
+        Json.FromJSON(ElementData);
+        result := Json.Names[0];
+      finally
+        FreeAndNil(Json);
+      end;
+    end;
+  end
+  else
+    result := '';
+end;
+
+function TWebElement.Location: string;
+var
+  Command: string;
+  Resp: string;
+  Ele: string;
+begin
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      if W3C then
+        Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+          '/element/' + Ele + '/rect'
+      else
+        Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+          '/element/' + Ele + '/location';
+      Resp := WebDriver.ExecuteCommand(cGet, Command);
+      result := WebDriver.ProcResponse(Resp);
+    end
+    else
+      result := '';
+  end
+  else
+    result := '';
+end;
+
+procedure TWebElement.ScreenShort(const FileName: string);
+var
+  bmp: TBitmap;
+begin
+  if WebDriver <> nil then
+  begin
+    bmp := TBitmap.Create;
+    try
+      ScreenShort(bmp);
+      WebDriver.BmpToPng(bmp, FileName);
+    finally
+      FreeAndNil(bmp);
+    end;
+  end;
+end;
+
+procedure TWebElement.ScreenShort(var bmp: TBitmap);
+var
+  Command: string;
+  Resp: string;
+  Pic: string;
+  X, Y, Width, Height: Integer;
+  FJson: TJsonObject;
+begin
+  if WebDriver <> nil then
+  begin
+    Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+      '/screenshot';
+    Resp := WebDriver.ExecuteCommand(cGet, Command);
+    FJson := TJsonObject.Create;
+    try
+      FJson.FromJSON(Resp);
+      if not WebDriver.HasError then
+      begin
+        Pic := FJson.S['value'];
+        FJson.FromJSON(Location);
+
+        X := FJson.I['x'];
+        Y := FJson.I['y'];
+        FJson.FromJSON(Size);
+        Width := FJson.I['width'];
+        Height := FJson.I['height'];
+        WebDriver.CutImage(Pic, X, Y, Width, Height, bmp);
+      end;
+    finally
+      FJson.Free;
+    end;
+  end;
+end;
+
+procedure TWebElement.SendKey(Key: string);
+var
+  Command: string;
+  Data: string;
+  Resp: string;
+  KeyArr: string;
+  I: Integer;
+  FJson: TJsonObject;
+begin
+  Command := WebDriver.Host + '/session/' + WebDriver.SessionID + '/element/' +
+    Value + '/value';
+  FJson := TJsonObject.Create;
+  try
+    FJson.Clear;
+    KeyArr := '[';
+    for I := 1 to Length(Key) do
+    begin
+      if KeyArr = '[' then
+        KeyArr := KeyArr + '"' + Key[I] + '"'
+      else
+        KeyArr := KeyArr + ',' + '"' + Key[I] + '"';
+    end;
+
+    KeyArr := KeyArr + ']';
+
+    FJson.A['value'].FromJSON(KeyArr);
+    FJson.S['text'] := Key;
+    FJson.S['id'] := Value;
+    Data := FJson.ToJSON();
+  finally
+    FJson.Free;
+  end;
+  Resp := WebDriver.ExecuteCommand(cPost, Command, Data);
+  WebDriver.ProcResponse(Resp);
+end;
+
+function TWebElement.Size: string;
+var
+  Command: string;
+  Resp: string;
+  Ele: string;
+begin
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      if W3C then
+        Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+          '/element/' + Ele + '/rect'
+      else
+        Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+          '/element/' + Ele + '/size';
+      Resp := WebDriver.ExecuteCommand(cGet, Command);
+      result := WebDriver.ProcResponse(Resp);
+    end
+    else
+      result := '';
+  end
+  else
+    result := '';
+end;
+
+function TWebElements.GetCount: Integer;
+var
+  Json: TJsonArray;
+begin
+  result := 0;
+  if ElementsData <> '' then
+  begin
+    Json := TJsonArray.Create;
+    try
+      Json.FromJSON(ElementsData);
+      result := Json.Count;
+    finally
+      Json.Free;
+    end;
+  end;
+end;
+
+function TWebElements.GetItems(Index: Integer): TWebElement;
+var
+  Json: TJsonArray;
+begin
+  if ElementsData <> '' then
+  begin
+    Json := TJsonArray.Create;
+    try
+      Json.FromJSON(ElementsData);
+      if (index >= 0) and (Index < Json.Count) then
+      begin
+        result.ElementData := Json.O[Index].ToJSON;
+        result.W3C := W3C;
+        result.WebDriver := WebDriver;
+        result.UsingName := UsingName;
+        result.KeyName := KeyName;
+      end;
+    finally
+      Json.Free;
     end;
   end;
 end;
