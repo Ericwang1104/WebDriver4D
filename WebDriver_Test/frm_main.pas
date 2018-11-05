@@ -45,6 +45,7 @@ type
     procedure txtWebDriverPathChange(Sender: TObject);
   private
     FCMD: TDelphiCommand;
+    FcurElement: TWebElement;
     FIni: TIniFile;
     FWD: TWebDriver;
     function GetAppPath: string;
@@ -73,13 +74,18 @@ begin
 end;
 
 procedure TForm1.actFindElementByTagExecute(Sender: TObject);
+
 begin
-  memLog.Lines.Add(FWd.FindElementsByTag(txtFindName.Text));
+  FcurElement := FWd.FindElementByTag(txtFindName.Text);
+  memLog.Lines.Add(FcurElement.Text);
 end;
 
 procedure TForm1.actGentInnerHTMLExecute(Sender: TObject);
+var
+  Element:TWebElement;
 begin
-  memLog.Lines.Add(FWd.GetElementAttribute(txtElement.Text,'innerHTML'));
+  Element :=FcurElement;
+  memLog.Lines.Add(FcurElement.PropertyValue('innerHTML'));
 end;
 
 procedure TForm1.actStartWebDriverExecute(Sender: TObject);

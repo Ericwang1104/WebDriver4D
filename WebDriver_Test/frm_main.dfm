@@ -57,7 +57,6 @@ object Form1: TForm1
       'Edge Driver'
       'Phantomjs Driver')
     TabOrder = 0
-    ExplicitWidth = 741
   end
   object memLog: TMemo
     Left = 8
@@ -67,7 +66,6 @@ object Form1: TForm1
     Anchors = [akLeft, akRight, akBottom]
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitWidth = 741
   end
   object PageControl1: TPageControl
     Left = 8
@@ -77,10 +75,8 @@ object Form1: TForm1
     ActivePage = TabSheet1
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 2
-    ExplicitWidth = 741
     object TabSheet1: TTabSheet
       Caption = 'command1'
-      ExplicitWidth = 733
       object Label2: TLabel
         Left = 3
         Top = 24
@@ -146,7 +142,6 @@ object Form1: TForm1
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 3
     OnChange = txtWebDriverPathChange
-    ExplicitWidth = 553
   end
   object Button2: TButton
     Left = 671
@@ -156,7 +151,6 @@ object Form1: TForm1
     Action = actStartWebDriver
     Anchors = [akTop, akRight]
     TabOrder = 4
-    ExplicitLeft = 648
   end
   object txtSession: TEdit
     Left = 50
@@ -168,7 +162,6 @@ object Form1: TForm1
     ReadOnly = True
     TabOrder = 5
     OnChange = txtWebDriverPathChange
-    ExplicitWidth = 699
   end
   object ActionList1: TActionList
     Left = 568

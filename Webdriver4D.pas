@@ -4,7 +4,7 @@ interface
 
 uses
   Classes, SysUtils, Windows, Contnrs, Vcl.Graphics, WD_http,
-{$IFDEF FPC} {$ELSE} WD_httpDelphi, {$ENDIF}
+  {$IFDEF FPC} {$ELSE} WD_httpDelphi, {$ENDIF}
 //{$IFDEF FPC} {$ELSE} WD_httpCis, {$ENDIF}
   JsonDataObjects, Winapi.ShlObj;
 
@@ -19,23 +19,30 @@ type
     FUsingName: string;
     FWebDriver: TWebDriver;
     function GetValue: string;
-    function GetName: string;
+    function GetTagName: string;
+    function GetSize: string;
+    function GetText: string;
   public
     W3C: Boolean;
     ElementData: string;
-    function Attribute(attributename: string): string;
+    function AttributeValue(aName: string): string;
+    function PropertyValue(aName: string): string;
+    procedure Clear;
     procedure Click;
+    function IsEmpty: Boolean;
     function Location: string;
-    procedure ScreenShort(const FileName: string); overload;
-    procedure ScreenShort(var bmp: TBitmap); overload;
+    procedure ScreenShot(const FileName: string); overload;
+    procedure ScreenShot(var bmp: TBitmap); overload;
+    procedure ScreenShot2(var bmp: TBitmap); overload; // 有的浏览器不支持
     procedure SendKey(Key: string);
-    function Size: string;
 
     property WebDriver: TWebDriver read FWebDriver write FWebDriver;
     property UsingName: string read FUsingName write FUsingName;
     property KeyName: string read FKeyName write FKeyName;
     property Value: string read GetValue; // 元件ID值
-    property Name: string read GetName; // 元件名
+    property TagName: string read GetTagName;
+    property Size: string read GetSize;
+    property Text: string read GetText;
   end;
 
   TWebElements = packed record
@@ -72,7 +79,6 @@ type
     function GetHasError: Boolean;
     function GetHost: string;
     function GetTimeout: Integer;
-    procedure SaveScreenToFileName(const FileName, Base64File: string);
     procedure SetTimeout(const Value: Integer);
   strict protected
     FDriverName: string;
@@ -91,6 +97,7 @@ type
     function ProcResponse(const Resp: string): string;
     procedure CutImage(Pic: string; X, Y, Width, Height: Integer;
       var bmp: TBitmap);
+    procedure Base64ToBmp(Pic: string; var bmp: TBitmap);
     procedure BmpToPng(bmp: TBitmap; const FileName: string);
     procedure StartDriver(const ExeName: string;
       const Args: string = ''); virtual;
@@ -125,7 +132,6 @@ type
     procedure DeleteSession(ParamSessionID: string = '');
     function GetDocument: string;
     function GetAllSession: string;
-    procedure Save_screenshot(const FileName: string);
     procedure Set_Window_Size(const Width, Height: Integer;
       WindowHandle: string = 'current');
     function ExecuteScript(const Script: string; const Args: string = '[]')
@@ -136,6 +142,9 @@ type
     procedure PageLoadTimeout(const Timeout: Integer);
     procedure Quit;
     procedure Refresh(ParamSessionID: string = '');
+    procedure ScreenShot(var bmp: TBitmap); overload;
+    procedure ScreenShot(const FileName: string); overload;
+
     procedure SwitchToFrame(const FrameID: string); virtual;
     procedure SwitchToParentFrame; virtual;
     procedure TerminateWebDriver;
@@ -300,14 +309,14 @@ begin
     REctS.Top := Y;
     REctS.Width := Width;
     REctS.Height := Height;
+
     REctD.Left := 0;
     REctD.Top := 0;
-    bmp.Width := Width;
-    bmp.Height := Height;
-
     REctD.Width := Width;
     REctD.Height := Height;
 
+    bmp.Width := Width;
+    bmp.Height := Height;
     bmp.Canvas.CopyRect(REctD, png.Canvas, REctS);
     // bitblt(pngd.Canvas.Handle,0,0,Width,height,png.Canvas.Handle,X,Y,SRCCOPY);
   finally
@@ -546,26 +555,6 @@ begin
   end;
 end;
 
-procedure TWebDriver.SaveScreenToFileName(const FileName, Base64File: string);
-var
-  Encode: TBase64Encoding;
-  bytes: TBytes;
-  Fs: TFileStream;
-begin
-  Encode := TBase64Encoding.Create;
-  try
-    bytes := Encode.DecodeStringToBytes(Base64File);
-    Fs := TFileStream.Create(FileName, fmCreate);
-    try
-      Fs.Write(bytes, Length(bytes));
-    finally
-      FreeAndNil(Fs);
-    end;
-  finally
-    FreeAndNil(Encode);
-  end;
-end;
-
 procedure TWebDriver.StartDriver(const ExeName: string;
   const Args: string = '');
 var
@@ -589,21 +578,6 @@ begin
     NORMAL_PRIORITY_CLASS, nil, nil, FStartupInfo, FProcessInfo) then
   begin
 
-  end;
-end;
-
-procedure TWebDriver.Save_screenshot(const FileName: string);
-var
-  Command: string;
-  Resp: string;
-  Pic: string;
-begin
-  Command := Host + '/session/' + FSessionID + '/screenshot';
-  Resp := ExecuteCommand(cGet, Command);
-  Pic := ProcResponse(Resp);
-  if not HasError then
-  begin
-    SaveScreenToFileName(FileName, Pic);
   end;
 end;
 
@@ -836,6 +810,44 @@ begin
   end;
 end;
 
+procedure TWebDriver.Base64ToBmp(Pic: string; var bmp: TBitmap);
+var
+  png: TPngImage;
+  Encd: TBase64Encoding;
+  Stream: TMemoryStream;
+  Byts: TBytes;
+  REctS, REctD: TRect;
+begin
+  Encd := TBase64Encoding.Create;
+  Stream := TMemoryStream.Create;
+  png := TPngImage.Create;
+  try
+    Byts := Encd.DecodeStringToBytes(Pic);
+    Stream.Write(Byts[0], Length(Byts));
+    Stream.Position := 0;
+    png.LoadFromStream(Stream);
+
+    REctS.Left := 0;
+    REctS.Top := 0;
+    REctS.Width := png.Width;
+    REctS.Height := png.Height;
+
+    REctD.Left := 0;
+    REctD.Top := 0;
+    REctD.Width := png.Width;
+    REctD.Height := png.Height;
+
+    bmp.Width := png.Width;
+    bmp.Height := png.Height;
+    bmp.Canvas.CopyRect(REctD, png.Canvas, REctS);
+    // bitblt(pngd.Canvas.Handle,0,0,Width,height,png.Canvas.Handle,X,Y,SRCCOPY);
+  finally
+    FreeAndNil(png);
+    FreeAndNil(Stream);
+    FreeAndNil(Encd);
+  end;
+end;
+
 function TWebDriver.ExecuteCommand(const CommandType: TCommandType;
   const Command: string; const Param: string = ''): string;
 begin
@@ -1028,6 +1040,41 @@ begin
   end;
 end;
 
+procedure TWebDriver.ScreenShot(var bmp: TBitmap);
+var
+  Command: string;
+  Resp: string;
+  Pic: string;
+  FJson: TJsonObject;
+begin
+  Command := Host + '/session/' + SessionID + '/screenshot';
+  Resp := ExecuteCommand(cGet, Command);
+  FJson := TJsonObject.Create;
+  try
+    FJson.FromJSON(Resp);
+    if not HasError then
+    begin
+      Pic := FJson.S['value'];
+      Base64ToBmp(Pic, bmp);
+    end;
+  finally
+    FJson.Free;
+  end;
+end;
+
+procedure TWebDriver.ScreenShot(const FileName: string);
+var
+  bmp: TBitmap;
+begin
+  bmp := TBitmap.Create;
+  try
+    ScreenShot(bmp);
+    BmpToPng(bmp, FileName);
+  finally
+    FreeAndNil(bmp);
+  end;
+end;
+
 procedure TWebDriver.SetTimeout(const Value: Integer);
 begin
   FCmd.Timeout := Value;
@@ -1044,8 +1091,7 @@ begin
   Element := FindElementByID(FrameID);
   if Element.ElementData <> '' then
   begin
-    Data := '{"id": {"ELEMENT": "' + Element.Value + '", "' + Element.Name +
-      '": "' + Element.Value + '"}}';
+    Data := format('{"id": {"ELEMENT": "%s"}}', [Element.Value]);
     Resp := ExecuteCommand(cPost, Command, Data);
     ProcResponse(Resp);
   end;
@@ -1514,22 +1560,64 @@ begin
   ProcResponse(Resp);
 end;
 
-function TWebElement.Attribute(attributename: string): string;
+function TWebElement.AttributeValue(aName: string): string;
 var
   Command: string;
   Ele: string;
   Resp: string;
 begin
+  result := '';
   if WebDriver <> nil then
   begin
     Ele := Value;
     Command := WebDriver.Host + '/session/' + WebDriver.SessionID + '/element/'
-      + Ele + '/attribute/' + attributename;
+      + Ele + '/attribute/' + aName;
     Resp := WebDriver.ExecuteCommand(cGet, Command);
     result := WebDriver.ProcResponse(Resp);
-  end
-  else
-    result := '';
+  end;
+end;
+
+function TWebElement.PropertyValue(aName: string): string;
+var
+  Command: string;
+  Ele: string;
+  Resp: string;
+begin
+  result := '';
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    Command := WebDriver.Host + '/session/' + WebDriver.SessionID + '/element/'
+      + Ele + '/property/' + aName;
+    Resp := WebDriver.ExecuteCommand(cGet, Command);
+    result := WebDriver.ProcResponse(Resp);
+  end;
+end;
+
+procedure TWebElement.Clear;
+var
+  Command: string;
+  Ele: string;
+  Data: string;
+  Resp: string;
+  FJson: TJsonObject;
+begin
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+        '/element/' + Ele + '/clear';
+      FJson := TJsonObject.Create;
+      FJson.S['using'] := UsingName;
+      FJson.S['value'] := KeyName;
+      FJson.S['id'] := Ele;
+      Data := FJson.ToJSON(False);
+      Resp := WebDriver.ExecuteCommand(cPost, Command, Data);
+      WebDriver.ProcResponse(Resp);
+    end;
+  end;
 end;
 
 procedure TWebElement.Click;
@@ -1558,10 +1646,31 @@ begin
   end;
 end;
 
+function TWebElement.GetTagName: string;
+var
+  Command: string;
+  Ele: string;
+  Resp: string;
+begin
+  result := '';
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+        '/element/' + Ele + '/name';
+      Resp := WebDriver.ExecuteCommand(cGet, Command);
+      result := WebDriver.ProcResponse(Resp);
+    end;
+  end;
+end;
+
 function TWebElement.GetValue: string;
 var
   Json: TJsonObject;
 begin
+  result := '';
   if ElementData <> '' then
   begin
     Json := TJsonObject.Create;
@@ -1578,32 +1687,7 @@ begin
     finally
       FreeAndNil(Json);
     end;
-  end
-  else
-    result := '';
-end;
-
-function TWebElement.GetName: string;
-var
-  Json: TJsonObject;
-begin
-  if ElementData <> '' then
-  begin
-    if not W3C then
-      result := ElementData
-    else
-    begin
-      Json := TJsonObject.Create;
-      try
-        Json.FromJSON(ElementData);
-        result := Json.Names[0];
-      finally
-        FreeAndNil(Json);
-      end;
-    end;
-  end
-  else
-    result := '';
+  end;
 end;
 
 function TWebElement.Location: string;
@@ -1612,6 +1696,7 @@ var
   Resp: string;
   Ele: string;
 begin
+  result := '';
   if WebDriver <> nil then
   begin
     Ele := Value;
@@ -1625,15 +1710,11 @@ begin
           '/element/' + Ele + '/location';
       Resp := WebDriver.ExecuteCommand(cGet, Command);
       result := WebDriver.ProcResponse(Resp);
-    end
-    else
-      result := '';
-  end
-  else
-    result := '';
+    end;
+  end;
 end;
 
-procedure TWebElement.ScreenShort(const FileName: string);
+procedure TWebElement.ScreenShot(const FileName: string);
 var
   bmp: TBitmap;
 begin
@@ -1641,7 +1722,7 @@ begin
   begin
     bmp := TBitmap.Create;
     try
-      ScreenShort(bmp);
+      ScreenShot(bmp);
       WebDriver.BmpToPng(bmp, FileName);
     finally
       FreeAndNil(bmp);
@@ -1649,7 +1730,7 @@ begin
   end;
 end;
 
-procedure TWebElement.ScreenShort(var bmp: TBitmap);
+procedure TWebElement.ScreenShot(var bmp: TBitmap);
 var
   Command: string;
   Resp: string;
@@ -1719,12 +1800,13 @@ begin
   WebDriver.ProcResponse(Resp);
 end;
 
-function TWebElement.Size: string;
+function TWebElement.GetSize: string;
 var
   Command: string;
   Resp: string;
   Ele: string;
 begin
+  result := '';
   if WebDriver <> nil then
   begin
     Ele := Value;
@@ -1738,12 +1820,59 @@ begin
           '/element/' + Ele + '/size';
       Resp := WebDriver.ExecuteCommand(cGet, Command);
       result := WebDriver.ProcResponse(Resp);
-    end
-    else
-      result := '';
-  end
-  else
-    result := '';
+    end;
+  end;
+end;
+
+function TWebElement.GetText: string;
+var
+  Command: string;
+  Ele: string;
+  Resp: string;
+begin
+  result := '';
+  if WebDriver <> nil then
+  begin
+    Ele := Value;
+    if Ele <> '' then
+    begin
+      Command := WebDriver.Host + '/session/' + WebDriver.SessionID +
+        '/element/' + Ele + '/text';
+      Resp := WebDriver.ExecuteCommand(cGet, Command);
+      result := WebDriver.ProcResponse(Resp);
+    end;
+  end;
+end;
+
+function TWebElement.IsEmpty: Boolean;
+begin
+  Result :=ElementData='' ;
+end;
+
+procedure TWebElement.ScreenShot2(var bmp: TBitmap);
+var
+  Command: string;
+  Resp: string;
+  Pic: string;
+  FJson: TJsonObject;
+begin
+  if WebDriver <> nil then
+  begin
+    Command := WebDriver.Host + '/session/' + WebDriver.SessionID + '/element/'
+      + Value + '/screenshot';
+    Resp := WebDriver.ExecuteCommand(cGet, Command);
+    FJson := TJsonObject.Create;
+    try
+      FJson.FromJSON(Resp);
+      if not WebDriver.HasError then
+      begin
+        Pic := FJson.S['value'];
+        WebDriver.Base64ToBmp(Pic, bmp);
+      end;
+    finally
+      FJson.Free;
+    end;
+  end;
 end;
 
 function TWebElements.GetCount: Integer;
