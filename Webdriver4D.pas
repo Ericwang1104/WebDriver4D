@@ -9,8 +9,9 @@ uses
   JsonDataObjects, Winapi.ShlObj;
 
 type
+  TWebDriverClass=class of TWebDriver;
   TCommandType = (cGet, cPost, cDelete);
-  TDriverType = (btPhantomjs, btIE, btFirefox, btChrome);
+  TDriverType = (btPhantomjs, btIE, btFirefox, btChrome,btEdge);
   TWebDriver = class;
 
   TWebElement = packed record
@@ -64,7 +65,7 @@ type
   end;
 
   TExecCommandEvent = procedure(response: string) of object;
-  TWebDriverClass = class of TWebDriver;
+
 
   TWebDriver = class(TComponent)
   private
@@ -142,6 +143,7 @@ type
     procedure PageLoadTimeout(const Timeout: Integer);
     procedure Quit;
     procedure Refresh(ParamSessionID: string = '');
+    procedure SaveCurDocToFile(const FileName: string);
     procedure ScreenShot(var bmp: TBitmap); overload;
     procedure ScreenShot(const FileName: string); overload;
 
@@ -1037,6 +1039,19 @@ begin
     end;
   finally
     FreeAndNil(Json);
+  end;
+end;
+
+procedure TWebDriver.SaveCurDocToFile(const FileName: string);
+var
+  lst:TStringList;
+begin
+  lst :=Tstringlist.Create;
+  try
+    lst.Text :=GetDocument;
+    lst.SaveToFile(FileName);
+  finally
+    FreeandNil(lst);
   end;
 end;
 
