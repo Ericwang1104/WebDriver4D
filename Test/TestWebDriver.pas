@@ -169,7 +169,7 @@ end;
 procedure TestTWebDriver.LoginWeibo;
 var
   hand: string;
-  Ele: string;
+  Ele: TWebElement;
   Count: integer;
 begin
   Sleep(500);
@@ -186,14 +186,14 @@ begin
 
   Ele := FWD.FindElementByID('loginName');
 
-  FWD.SendKey(Ele, 'test@sina.cn');
+  Ele.SendKey( 'test@sina.cn');
 
   Ele := FWD.FindElementByID('loginPassword');
 
-  FWD.SendKey(Ele, 'weibopassword');
+  Ele.SendKey( 'weibopassword');
 
   Ele := FWD.FindElementByID('loginAction');
-  FWD.ElementClick(Ele);
+  Ele.Click();
 
 end;
 
@@ -262,12 +262,12 @@ begin
   // xxx := FWD.ExecuteScript('return document.title');
   xxx := FWD.ExecuteScript('return document.body.innerHTML');
 
-  FWD.Save_screenshot('..\temp.png');
+  FWD.ScreenShot('..\temp.png');
 end;
 
 procedure TestTWebDriver.TestGetAllCookies;
 var
-  Element: string;
+  Element: TWebElement;
   enabled: string;
   Cookies: string;
   lst: TStringList;
@@ -286,20 +286,19 @@ begin
   FWD.Implicitly_Wait(1500);
 
   Element := FWD.FindElementByID('loginname');
-  if Element <> '' then
+  if not Element.IsEmpty then
   begin
 
-    FWD.SendKey(Element, 'weiboaddress');
+    Element.SendKey( 'weiboaddress');
     Element := FWD.FindElementByXPath
       ('//input[@type="password" and @node-type="password"]');
 
-    FWD.SendKey(Element, 'aaaa');
+    Element.SendKey( 'aaaa');
     Element := FWD.FindElementByXPath
       ('//a[@action-type="btn_submit" and @node-type="submitBtn" ]');
-    if FWD.GetElementAttribute(Element, 'enabled') = 'true' then
+    if element.AttributeValue('enabled') = 'true' then
     begin
-
-      FWD.ElementClick(Element);
+      element.Click();
     end;
 
   end;
@@ -332,7 +331,7 @@ end;
 procedure TestTWebDriver.TestScreenShot;
 var
   hand: string;
-  Ele: string;
+  Ele: TWebElement;
   Json: TJsonObject;
   Count: integer;
 begin
@@ -343,23 +342,22 @@ begin
   FWD.GetURL('https://passport.weibo.cn/signin/login?entry=mweibo');
   Sleep(3000);
 
-  Ele := FWD.FindElementsByXPath
-    ('//div[@class="card card9 line-around" and @data-act-type="hover"]');
+  Ele := FWD.FindElementByXPath('//div[@class="card card9 line-around" and @data-act-type="hover"]');
   FWD.Implicitly_Wait(3000);
   Ele := FWD.FindElementByID('loginName');
-  FWD.SendKey(Ele, 'test@sina.cn');
+  Ele.SendKey('test@sina.cn');
   Ele := FWD.FindElementByID('loginPassword');
-  FWD.SendKey(Ele, 'aaa');
+  Ele.SendKey( 'aaa');
   Ele := FWD.FindElementByID('loginAction');
-  FWD.ElementClick(Ele);
+  Ele.Click();
 
-  FWD.Save_screenshot('..\..\test.png');
+  FWD.ScreenShot('..\..\test.png');
 
 end;
 
 procedure TestTWebDriver.TestGetElement;
 var
-  Element: string;
+  Element: TWebElement;
 begin
   Sleep(500);
   FWD.Clear;
@@ -368,6 +366,7 @@ begin
   FWD.GetURL('https://passport.weibo.cn/signin/login?entry=mweibo');
   FWD.Implicitly_Wait(3000);
   Element := FWD.FindElementByID('loginName');
+  CheckFalse(Element.IsEmpty);
   CheckHasError;
 end;
 

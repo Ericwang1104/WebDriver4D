@@ -199,6 +199,7 @@ type
   TFireFoxDriver = class(TWebDriver)
   private
     FBrowserFileName: string;
+    FnewVersion: Boolean;
   strict protected
     function BuildParams: string; override;
   public
@@ -208,6 +209,7 @@ type
       const Args: string = ''); override;
     property BrowserFileName: string read FBrowserFileName
       write FBrowserFileName;
+    property newVersion: Boolean read FnewVersion write FnewVersion;
   end;
 
   TChromeDriver = class(TWebDriver)
@@ -1272,9 +1274,11 @@ constructor TFireFoxDriver.Create(AOwner: TComponent);
 begin
   inherited;
   FPort := 4444;
+  FnewVersion :=false;
   FPath := '/wd/hub'; // 旧版,我目前用的旧版
   // FPath:=''; 新版
   FBrowserFileName := '';
+
 end;
 
 function TFireFoxDriver.BuildParams: string;
@@ -1304,6 +1308,15 @@ begin
       end;
 
     result := '';
+    if FnewVersion then
+    begin
+      FPath :='';
+
+    end else
+    begin
+      FPath := '/wd/hub';
+
+    end;
     Command := Host + '/session';
     JsStr := ReplaceStr(FBrowserFileName, '\', '\\');
     Resp := ExecuteCommand(cPost, Command, format(Firefox_Param,

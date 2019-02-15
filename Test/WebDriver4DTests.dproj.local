@@ -1,33 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>2017/04/04 08:24:23.000.541,E:\MyPrj\CNNIC\FinanceSpider\Test\Unit1.dfm=E:\MyPrj\CNNIC\FinanceSpider\Spider_Module.dfm</Transaction>
-    <Transaction>2017/04/06 08:19:41.000.775,E:\MyPrj\CNNIC\FinanceSpider\Test\frm_CEFTest.dfm=E:\MyPrj\CNNIC\FinanceSpider\Test\Unit2.dfm</Transaction>
-    <Transaction>2017/04/08 08:30:10.000.423,E:\MyPrj\CNNIC\FinanceSpider\Spider_Module.dfm=E:\MyPrj\CNNIC\FinanceSpider\Data_Module.dfm</Transaction>
-    <Transaction>2017/04/23 08:19:37.000.488,E:\MyPrj\CNNIC\FinanceSpider\BrowserSpiderTools\BrowserSpiderTools.dfm=E:\MyPrj\CNNIC\FinanceSpider\Test\Unit2.dfm</Transaction>
+    <Transaction>2017/04/04 08:24:23.000.541,E:\MyPrj\CNNIC\FinanceSpider\Spider_Module.dfm=E:\MyPrj\CNNIC\FinanceSpider\Test\Unit1.dfm</Transaction>
+    <Transaction>2017/04/06 08:19:41.000.775,E:\MyPrj\CNNIC\FinanceSpider\Test\Unit2.dfm=E:\MyPrj\CNNIC\FinanceSpider\Test\frm_CEFTest.dfm</Transaction>
+    <Transaction>2017/04/08 08:30:10.000.423,E:\MyPrj\CNNIC\FinanceSpider\Data_Module.dfm=E:\MyPrj\CNNIC\FinanceSpider\Spider_Module.dfm</Transaction>
+    <Transaction>2017/04/23 08:19:37.000.488,E:\MyPrj\CNNIC\FinanceSpider\Test\Unit2.dfm=E:\MyPrj\CNNIC\FinanceSpider\BrowserSpiderTools\BrowserSpiderTools.dfm</Transaction>
     <Transaction>2017/07/14 15:02:59.000.404,E:\myproject\CNNIC\FinanceSpider\Data_Module.pas=</Transaction>
     <Transaction>2017/07/14 15:03:10.000.276,=E:\myproject\CNNIC\FinanceSpider\FSpider\m_datamodule.pas</Transaction>
     <Transaction>2017/07/18 13:40:34.000.727,=E:\myproject\CNNIC\FinanceSpider\FSpider\frm_SpiderSettings.pas</Transaction>
     <Transaction>2017/07/18 13:41:14.000.924,=E:\myproject\CNNIC\FinanceSpider\Test\Testfrm_SpiderSettings.pas</Transaction>
     <Transaction>2017/07/19 10:47:44.000.979,=E:\myproject\CNNIC\FinanceSpider\Test\Unit3.pas</Transaction>
-    <Transaction>2017/07/19 10:48:12.000.825,E:\myproject\CNNIC\FinanceSpider\Test\Unit3.pas=E:\myproject\CNNIC\FinanceSpider\Test\frm_NewChannelType_Search.pas</Transaction>
-    <Transaction>2017/07/19 10:48:12.000.825,E:\myproject\CNNIC\FinanceSpider\Test\Unit3.dfm=E:\myproject\CNNIC\FinanceSpider\Test\frm_NewChannelType_Search.dfm</Transaction>
-    <Transaction>2017/08/29 14:25:40.000.208,E:\GitHub\WEbDriver4D\FinanceSpiderTests.dproj=E:\GitHub\WEbDriver4D\WebDriver4DTests.dproj</Transaction>
+    <Transaction>2017/07/19 10:48:12.000.825,E:\myproject\CNNIC\FinanceSpider\Test\frm_NewChannelType_Search.dfm=E:\myproject\CNNIC\FinanceSpider\Test\Unit3.dfm</Transaction>
+    <Transaction>2017/07/19 10:48:12.000.825,E:\myproject\CNNIC\FinanceSpider\Test\frm_NewChannelType_Search.pas=E:\myproject\CNNIC\FinanceSpider\Test\Unit3.pas</Transaction>
+    <Transaction>2017/08/29 14:25:40.000.208,E:\GitHub\WEbDriver4D\WebDriver4DTests.dproj=E:\GitHub\WEbDriver4D\FinanceSpiderTests.dproj</Transaction>
     <Transaction>2017/08/29 14:25:56.000.455,E:\GitHub\WEbDriver4D\TestHtml2Article.pas=</Transaction>
     <Transaction>2017/08/29 16:36:46.000.003,=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
-    <Transaction>2017/08/29 16:38:15.000.184,E:\GitHub\WEbDriver4D\delphi_driver.pas=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
+    <Transaction>2017/08/29 16:38:15.000.184,E:\GitHub\WEbDriver4D\Test\Unit1.pas=E:\GitHub\WEbDriver4D\delphi_driver.pas</Transaction>
     <Transaction>2017/08/29 16:38:22.000.071,=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
-    <Transaction>2017/08/29 16:38:35.000.193,E:\GitHub\WEbDriver4D\lazarus_driver.pas=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
+    <Transaction>2017/08/29 16:38:35.000.193,E:\GitHub\WEbDriver4D\Test\Unit1.pas=E:\GitHub\WEbDriver4D\lazarus_driver.pas</Transaction>
     <Transaction>2017/08/31 16:08:22.000.567,=E:\GitHub\WEbDriver4D\JsonDataObjects.pas</Transaction>
     <Transaction>2018/03/13 08:14:11.000.989,=E:\GitHub\WEbDriver4D\WD_httpDelphi.pas</Transaction>
     <Transaction>2018/03/13 08:14:11.000.968,=E:\GitHub\WEbDriver4D\WD_http.pas</Transaction>
     <Transaction>2018/03/13 08:14:45.000.490,E:\GitHub\WEbDriver4D\delphi_driver.pas=</Transaction>
-    <Transaction>2018/03/13 08:21:10.000.539,=E:\GitHub\WEbDriver4D\WD_httpDelphi.pas</Transaction>
     <Transaction>2018/03/13 08:21:10.000.521,=E:\GitHub\WEbDriver4D\WD_http.pas</Transaction>
-    <Transaction>2018/04/24 13:57:19.000.947,E:\GitHub\WEbDriver4D\Test\StartWebDriverService.dproj=E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj</Transaction>
-    <Transaction>2018/05/01 16:17:57.000.892,E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj=E:\GitHub\WEbDriver4D\Test\StartWebDriverService.dproj</Transaction>
+    <Transaction>2018/03/13 08:21:10.000.539,=E:\GitHub\WEbDriver4D\WD_httpDelphi.pas</Transaction>
+    <Transaction>2018/04/24 13:57:19.000.947,E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj=E:\GitHub\WEbDriver4D\Test\StartWebDriverService.dproj</Transaction>
+    <Transaction>2018/05/01 16:17:57.000.892,E:\GitHub\WEbDriver4D\Test\StartWebDriverService.dproj=E:\GitHub\WEbDriver4D\Test\WebDriver4DTests.dproj</Transaction>
     <Transaction>2018/08/14 11:19:20.000.140,=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
-    <Transaction>2018/08/14 11:19:52.000.844,E:\GitHub\WEbDriver4D\webdriver_js_string.pas=E:\GitHub\WEbDriver4D\Test\Unit1.pas</Transaction>
+    <Transaction>2018/08/14 11:19:52.000.844,E:\GitHub\WEbDriver4D\Test\Unit1.pas=E:\GitHub\WEbDriver4D\webdriver_js_string.pas</Transaction>
   </Transactions>
 	<ProjectSortOrder AutoSort="0" SortType="0">
     <File Path="..\..\WEbDriver4D"/>

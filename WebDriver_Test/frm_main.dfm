@@ -13,6 +13,7 @@ object Form1: TForm1
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnShow = FormShow
   DesignSize = (
     780
     554)
@@ -106,7 +107,7 @@ object Form1: TForm1
         Width = 265
         Height = 21
         TabOrder = 2
-        Text = 'txtFindName'
+        OnChange = txtFindNameChange
       end
       object Button3: TButton
         Left = 312
@@ -116,21 +117,29 @@ object Form1: TForm1
         Action = actFindElementByTag
         TabOrder = 3
       end
-      object txtElement: TEdit
+      object txtPropName: TEdit
         Left = 28
         Top = 104
         Width = 121
         Height = 21
         TabOrder = 4
-        Text = 'txtElement'
+        Text = 'txtPropName'
       end
       object Button4: TButton
-        Left = 423
-        Top = 28
+        Left = 167
+        Top = 100
         Width = 105
         Height = 25
-        Action = actGentInnerHTML
+        Action = actGetPropValue
         TabOrder = 5
+      end
+      object Button5: TButton
+        Left = 432
+        Top = 59
+        Width = 89
+        Height = 25
+        Action = actClickCurrentElement
+        TabOrder = 6
       end
     end
   end
@@ -185,9 +194,13 @@ object Form1: TForm1
       Caption = 'SwitchFrame'
       OnExecute = actSwitchFrameExecute
     end
-    object actGentInnerHTML: TAction
-      Caption = 'GentInnerHTML'
-      OnExecute = actGentInnerHTMLExecute
+    object actGetPropValue: TAction
+      Caption = 'GentPropValue'
+      OnExecute = actGetPropValueExecute
+    end
+    object actClickCurrentElement: TAction
+      Caption = 'Click Element'
+      OnExecute = actClickCurrentElementExecute
     end
   end
 end
