@@ -182,6 +182,8 @@ type
     procedure Assign(Source: TPersistent); override;
     function ExecuteScript(const Script: string; const Args: string = '[]')
       : string; override;
+    function Execute_Phantom_Script(const Script: string; const Args: string =
+        '[]'): string;
     function NewSession: string; override;
     property CookieFiles: string read FCookieFiles write FCookieFiles;
     property DiskCache: Boolean read FDiskCache write FDiskCache;
@@ -1218,6 +1220,27 @@ begin
     Resp := ExecuteCommand(cPost, Command, Data);
     result := ProcResponse(Resp);
   finally
+    FreeAndNil(Json);
+  end;
+end;
+
+function TPhantomjs.Execute_Phantom_Script(const Script: string; const Args:
+    string = '[]'): string;
+var
+  Command: string;
+  Data: string;
+  Resp: string;
+  Json: TJsonObject;
+begin
+  Json := TJsonObject.Create;
+  try
+    Command := Host + '/session/' + FSessionID + '/phantom/execute';
+    Json.S['script'] := Script;
+    Json.A['args'].FromJSON(Args);
+    Data := Json.ToJSON();
+    Resp := ExecuteCommand(cPost, Command, Data);
+    result := ProcResponse(Resp);
+  Finally
     FreeAndNil(Json);
   end;
 end;

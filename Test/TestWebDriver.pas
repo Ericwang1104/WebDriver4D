@@ -145,6 +145,7 @@ type
     procedure SetUp; override;
     procedure TearDown; override;
   published
+    procedure TestExecutePhantomjsScript;
     procedure TestYouDao;
   end;
 
@@ -372,11 +373,10 @@ end;
 
 procedure TestTWebDriver.TestGetElements;
 var
-  divs: string;
-  QJ: TJsonArray;
+  divs: TWebElements;
   I: integer;
   Item: TJsonObject;
-  Element: string;
+  Element: TWebElement;
 begin
   FWD.Clear;
   FWD.NewSession;
@@ -385,41 +385,33 @@ begin
   Sleep(3000);
 
   Element := FWD.FindElementByID('loginname');
-  if Element <> '' then
+  if Element.IsEmpty then
   begin
-
-    FWD.SendKey(Element, 'test@sina.cn');
+    Element.SendKey('test@sina.cn');
     Element := FWD.FindElementByXPath
       ('//input[@type="password" and @node-type="password"]');
 
-    FWD.SendKey(Element, 'aaa');
+    Element.SendKey( 'aaa');
     Element := FWD.FindElementByXPath
       ('//a[@action-type="btn_submit" and @node-type="submitBtn" ]');
-    if FWD.GetElementAttribute(Element, 'enabled') = 'true' then
+    if Element.AttributeValue( 'enabled') = 'true' then
     begin
 
-      FWD.ElementClick(Element);
+      Element.Click;
     end;
   end;
   Sleep(5000);
   divs := FWD.FindElementsByXPath('//div[@action-type="feed_list_item"]');
-  QJ := TJsonArray.Create;
-  try
-    QJ.Parse(divs);
-    for I := 0 to QJ.Count - 1 do
-    begin
-      Item := QJ.O[I];
-      Element := Item.ToJSON(false);
-      FWD.Element_ScreenShort(Element, 'E:\temp\' + inttostr(I) + '.png');
-    end;
-  finally
-    FreeAndnil(QJ);
+  for I := 0 to divs.Count - 1 do
+  begin
+    Element :=divs.Items[I];
+    FWD.ScreenShot( 'E:\temp\' + inttostr(I) + '.png');
   end;
 end;
 
 procedure TestTWebDriver.TestLoginWeibo;
 var
-  Element: string;
+  Element: TWebElement;
   enabled: string;
   SessionID: string;
 begin
@@ -439,37 +431,37 @@ begin
   Sleep(3000);
   Element := FWD.FindElementByID('loginname');
   CheckHasError;
-  if Element <> '' then
+  if Element.IsEmpty then
   begin
 
-    FWD.SendKey(Element, 'test@sina.cn');
+    Element.SendKey( 'test@sina.cn');
     CheckHasError;
     Element := FWD.FindElementByXPath
       ('//input[@type="password" and @node-type="password"]');
     CheckHasError;
 
-    FWD.SendKey(Element, 'aaaa');
+    Element.SendKey( 'aaaa');
     CheckHasError;
     Element := FWD.FindElementByXPath
       ('//a[@action-type="btn_submit" and @node-type="submitBtn" ]');
     CheckHasError;
-    if FWD.GetElementAttribute(Element, 'enabled') = 'true' then
+    if Element.AttributeValue( 'enabled') = 'true' then
     begin
       FWD.Set_Window_Size(1366, 768);
       CheckHasError;
-      FWD.ElementClick(Element);
+      Element.Click;
       CheckHasError;
     end;
 
   end;
 
-  FWD.Save_screenshot('e:\temp\weibo.png');
+  FWD.ScreenShot('e:\temp\weibo.png');
 
 end;
 
 procedure TestTWebDriver.TestSaveElementScreen;
 var
-  Element: string;
+  Element: TWebElement;
 begin
   Sleep(500);
   FWD.Clear;
@@ -483,12 +475,12 @@ begin
   FWD.Implicitly_Wait(3000);
 
   Element := FWD.FindElementByXPath('//div[@class="W_unlogin_v4"]');
-  FWD.Element_ScreenShort(Element, 'e:\temp\login.png');
+  Element.ScreenShot( 'e:\temp\login.png');
 end;
 
 procedure TestTWebDriver.TestSendKey;
 var
-  Element: string;
+  Element: TWebElement;
 begin
   Sleep(500);
   FWD.Clear;
@@ -503,13 +495,13 @@ begin
   Sleep(3000);
 
   Element := FWD.FindElementByID('loginName');
-  FWD.SendKey(Element, 'test@sina.cn');
+  Element.SendKey( 'test@sina.cn');
   Element := FWD.FindElementByID('loginPassword');
-  FWD.SendKey(Element, 'aaa');
+  Element.SendKey( 'aaa');
   Element := FWD.FindElementByID('loginAction');
-  FWD.ElementClick(Element);
+  Element.Click;
   Sleep(3000);
-  FWD.Save_screenshot('..\..\weibo.png');
+  FWD.ScreenShot('..\..\weibo.png');
 
 end;
 
@@ -532,73 +524,73 @@ end;
 
 procedure TestTWebDriver.TestFindElementByID;
 var
-  ReturnValue: string;
+  Element: TWebElement;
   ID: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementByID(ID);
+  //Element := FWD.FindElementByID(ID);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementByTag;
 var
-  ReturnValue: string;
+  Element: TWebElement;
   TagName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementByTag(TagName);
+  //Element := FWD.FindElementByTag(TagName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementByClassName;
 var
-  ReturnValue: string;
+  Element: TWebElement;
   ClasName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementByClassName(ClasName);
+  //Element := FWD.FindElementByClassName(ClasName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElement;
 var
-  ReturnValue: string;
+  WebElement: TWebElement;
   KeyName: string;
   usingName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElement(usingName, KeyName);
+  //WebElement := FWD.FindElement(usingName, KeyName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElements;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   KeyName: string;
   usingName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElements(usingName, KeyName);
+  //Elements := FWD.FindElements(usingName, KeyName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementByLinkText;
 var
-  ReturnValue: string;
+  Element: TWebElement;
   LinkText: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementByLinkText(LinkText);
+  Element := FWD.FindElementByLinkText(LinkText);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementByXPath;
 var
-  ReturnValue: string;
+  WebElement: TWebElement;
   XPath: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementByXPath(XPath);
+  WebElement := FWD.FindElementByXPath(XPath);
   // TODO: Validate method results
 end;
 
@@ -614,10 +606,10 @@ procedure TestTWebDriver.TestGetElementAttribute;
 var
   ReturnValue: string;
   attributename: string;
-  Element: string;
+  Element: TWebElement;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.GetElementAttribute(Element, attributename);
+  // Element.AttributeValue( attributename);
   // TODO: Validate method results
 end;
 
@@ -626,7 +618,7 @@ var
   FileName: string;
 begin
   // TODO: Setup method call parameters
-  FWD.Save_screenshot(FileName);
+  //FWD.ScreenShot(FileName);
   // TODO: Validate method results
 end;
 
@@ -643,106 +635,108 @@ end;
 
 procedure TestTWebDriver.TestElementClick;
 var
-  Element: string;
+  Element: TWebElement;
 begin
   // TODO: Setup method call parameters
-  FWD.ElementClick(Element);
+  Element.Click;
+
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestElement_Location;
 var
-  ReturnValue: string;
-  Element: string;
+  Location: string;
+  Element: TWebElement;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.Element_Location(Element);
+  Location := Element.Location;
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestElement_ScreenShort;
 var
   FileName: string;
-  Element: string;
+  Element: TWebElement;
 begin
   // TODO: Setup method call parameters
-  FWD.Element_ScreenShort(Element, FileName);
+  Element.ScreenShot( FileName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestElement_Size;
 var
   ReturnValue: string;
-  Element: string;
+  Element: TWebElement;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.Element_Size(Element);
+  //element.Size
+  //ReturnValue := FWD.Element_Size(Element);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementsByXPath;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   XPath: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementsByXPath(XPath);
+  //Elements := FWD.FindElementsByXPath(XPath);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementsByTag;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   TagName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementsByTag(TagName);
+  //Elements := FWD.FindElementsByTag(TagName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementsByLinkText;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   LinkText: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementsByLinkText(LinkText);
+  Elements := FWD.FindElementsByLinkText(LinkText);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementsByID;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   ID: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementsByID(ID);
+  //Elements := FWD.FindElementsByID(ID);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestFindElementsByClassName;
 var
-  ReturnValue: string;
+  Elements: TWebElements;
   ClasName: string;
 begin
   // TODO: Setup method call parameters
-  ReturnValue := FWD.FindElementsByClassName(ClasName);
+  //Elements := FWD.FindElementsByClassName(ClasName);
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestGetAllSession;
 var
-  ReturnValue: string;
+  AllSession: string;
 begin
-  ReturnValue := FWD.GetAllSession;
+  AllSession := FWD.GetAllSession;
   // TODO: Validate method results
 end;
 
 procedure TestTWebDriver.TestGet_AllCookies;
 var
-  ReturnValue: string;
+  AllCookie: string;
 begin
-  ReturnValue := FWD.GetAllCookie;
+  AllCookie := FWD.GetAllCookie;
   // TODO: Validate method results
 end;
 
@@ -791,9 +785,8 @@ begin
   //FWD.Implicitly_Wait(3000);
   FWD.GetURL('https://passport.weibo.cn/signin/login');
   script :=' var text '+
-  'text="";
-  ' for(var i=0;i<50;i++){'+
-  ' text=text
+  'text=""; for(var i=0;i<50;i++){'+
+  ' text=text';
 
   FWD.ExecuteScriptByASync(script);
 
@@ -801,17 +794,18 @@ end;
 
 procedure TestTWebDriver.TestGetElementAttribute_InnerHTML;
 var
-  Element:string;
+  Element:TWebElement;
   html:string;
 begin
   FWD.GetURL('http://www.yahoo.com/');
   Element :=FWD.FindElementByTag('body');
-  html :=FWD.GetElementAttribute(Element,'innerHTML');
+  html :=Element.AttributeValue('innerHTML');
+
 end;
 
 procedure TestTWebDriver.TestMail163;
 var
-  Element:string;
+  Element:TWebElement;
 begin
   //FWD.Port := 7777;
   Sleep(500);
@@ -819,11 +813,11 @@ begin
   FWD.SwitchToFrame('x-URS-iframe');
   Sleep(3000);
   Element := FWD.FindElementByXPath('//input[@name="email" and @data-loginname="loginEmail"]');
-  FWD.SendKey(Element, 'demo');
+  Element.SendKey( 'demo');
   Element := FWD.FindElementByXPath('//input[@name="password" and @type="password"]');
-  FWD.SendKey(Element, 'demo');
+  Element.SendKey( 'demo');
   Element := FWD.FindElementByID('dologin');
-  FWD.ElementClick(Element);
+  Element.Click;
   FWD.Clear;
 
 end;
@@ -1035,7 +1029,7 @@ end;
 procedure TestEdgeDriver.TestMail163;
 var
   WD:TEdgeDriver;
-  Element:string;
+  Element:TWebElement;
   Script:string;
 
 begin
@@ -1053,11 +1047,11 @@ begin
 
     Sleep(3000);
     Element := WD.FindElementByXPath('//input[@name="email" and @class="j-inputtext dlemail"');
-    WD.SendKey(Element, 'demo');
+    Element.SendKey( 'demo');
     Element := WD.FindElementByXPath('//input[@name="password" and @type="password"]');
-    WD.SendKey(Element, 'demo');
+    Element.SendKey( 'demo');
     Element := WD.FindElementByID('dologin');
-    WD.ElementClick(Element);
+    Element.Click;
   finally
     FreeAndNil(WD);
   end;
@@ -1066,7 +1060,7 @@ end;
 procedure TestEdgeDriver.TestYouDao;
 var
   WD:TEdgeDriver;
-  Element:string;
+  Element:TWebElement;
   Script:string;
   Text :string;
 begin
@@ -1081,19 +1075,19 @@ begin
     WD.GetURL('http://fanyi.youdao.com/?keyfrom=dict2.index');
 
     Element := WD.FindElementByID('inputOriginal');
-    WD.SendKey(Element,'This is a Book');
+    Element.SendKey('This is a Book');
     Sleep(2000);
     Element :=Wd.FindElementByID('transTarget');
-    Text :=Wd.GetElementAttribute(Element,'innerText');
+    Text :=Element.AttributeValue('innerText');
     CheckEquals(Text,'这是一本书');
     Element := WD.FindElementByID('inputDelete');
-    Wd.ElementClick(Element);
+    Element.Click;
 
     Element := WD.FindElementByID('inputOriginal');
-    WD.SendKey(Element,'an Apple a day keeps doctor away.');
+    Element.SendKey('an Apple a day keeps doctor away.');
     Sleep(2000);
     Element :=Wd.FindElementByID('transTarget');
-    Text :=Wd.GetElementAttribute(Element,'innerText');
+    Text :=Element.AttributeValue('innerText');
     CheckEquals(Text,'一日一苹果，医生远离我。');
 
 
@@ -1129,9 +1123,27 @@ begin
 
 end;
 
+procedure TestPhantomjsDriver.TestExecutePhantomjsScript;
+var
+  script:string;
+  Ip:string;
+  port:Integer;
+  Phantomjs:TPhantomjs;
+  str:string;
+
+begin
+  Ip :='118.163.120.182';
+  port := 58837;
+  script :=format('phantom.setProxy("%s",%d)',[Ip,port]);
+  Phantomjs :=FWD as TPhantomjs;
+  str :=Phantomjs.Execute_Phantom_Script(script);
+  Phantomjs.GetURL('https://www.baidu.com/s?wd=ip&rsv_spt=1&rsv_iqid=0xd14ff912000052e4&issp=1&f=8&rsv_bp=0&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_enter=1&rsv_sug3=2&rsv_sug2=0&inputT=544&rsv_sug4=544');
+  Phantomjs.ScreenShot('e:\temp\agent_test.png');
+end;
+
 procedure TestPhantomjsDriver.TestYouDao;
 var
-  Element:string;
+  Element:TWebElement;
   Text :string;
 begin
   FWD.NewSession;
@@ -1139,19 +1151,19 @@ begin
   FWD.GetURL('http://fanyi.youdao.com/?keyfrom=dict2.index');
 
   Element := FWD.FindElementByID('inputOriginal');
-  FWD.SendKey(Element,'This is a Book');
+  Element.SendKey('This is a Book');
   Sleep(2000);
   Element :=FWD.FindElementByID('transTarget');
-  Text :=trim(FWD.GetElementAttribute(Element,'innerText'));
+  Text :=trim(Element.AttributeValue('innerText'));
   CheckEquals(Text,'这是一本书');
   Element := FWD.FindElementByID('inputDelete');
-  FWD.ElementClick(Element);
+  Element.Click;
 
   Element := FWD.FindElementByID('inputOriginal');
-  FWD.SendKey(Element,'an Apple a day keeps doctor away.');
+  Element.SendKey('an Apple a day keeps doctor away.');
   Sleep(2000);
   Element :=FWD.FindElementByID('transTarget');
-  Text :=Trim(FWD.GetElementAttribute(Element,'innerText'));
+  Text :=Trim(Element.AttributeValue('innerText'));
   CheckEquals(Text,'一日一苹果，医生远离我。');
 
 end;
